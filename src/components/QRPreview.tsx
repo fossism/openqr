@@ -76,10 +76,14 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
       return () => clearTimeout(timer);
     }, [config, payloadText]);
 
-    const handleCopyPayload = () => {
-      navigator.clipboard.writeText(payloadText);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    const handleCopyPayload = async () => {
+      try {
+        await navigator.clipboard.writeText(payloadText);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        console.warn('Clipboard write failed:', err);
+      }
     };
 
     return (

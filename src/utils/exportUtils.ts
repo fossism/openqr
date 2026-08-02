@@ -16,6 +16,15 @@ export const triggerConfetti = () => {
 };
 
 /**
+ * Sanitizes filename to eliminate path traversal and OS-restricted characters
+ */
+export const sanitizeFilename = (filename: string, fallback: string = 'openqr-code'): string => {
+  if (!filename) return fallback;
+  const clean = filename.replace(/[^a-zA-Z0-9_\-\.\s]/g, '_').trim();
+  return clean || fallback;
+};
+
+/**
  * Downloads a rendered Canvas as PNG, WEBP, or JPEG
  */
 export const exportCanvasImage = (
@@ -26,9 +35,10 @@ export const exportCanvasImage = (
   if (!canvas) return;
   const mimeType = `image/${format}`;
   const dataUrl = canvas.toDataURL(mimeType, 1.0);
+  const safeName = sanitizeFilename(filename, 'openqr-code');
   
   const link = document.createElement('a');
-  link.download = `${filename}.${format}`;
+  link.download = `${safeName}.${format}`;
   link.href = dataUrl;
   document.body.appendChild(link);
   link.click();
@@ -50,7 +60,8 @@ export const exportSvgFile = (svgElement: SVGElement, filename: string = 'openqr
   }
 
   const blob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
-  saveAs(blob, `${filename}.svg`);
+  const safeName = sanitizeFilename(filename, 'openqr-code');
+  saveAs(blob, `${safeName}.svg`);
 
   triggerConfetti();
 };
@@ -102,6 +113,7 @@ export const exportPdfDocument = (
   pdf.setTextColor(148, 163, 184); // slate-400
   pdf.text('Generated using OpenQR — Privacy-First Open Source QR Generator', pageWidth / 2, y + qrSize + 25, { align: 'center' });
 
-  pdf.save(`${filename}.pdf`);
+  const safeName = sanitizeFilename(filename, 'openqr-document');
+  pdf.save(`${safeName}.pdf`);
   triggerConfetti();
 };

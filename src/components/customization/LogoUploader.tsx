@@ -22,6 +22,17 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
     const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.type.startsWith('image/')) {
+      alert('Invalid file format. Please upload an image file (PNG, SVG, WEBP, or JPG).');
+      return;
+    }
+
+    const MAX_SIZE = 5 * 1024 * 1024; // 5MB
+    if (file.size > MAX_SIZE) {
+      alert('File size exceeds 5MB limit. Please upload a smaller image.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (event) => {
       const src = event.target?.result as string;

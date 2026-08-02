@@ -8,6 +8,22 @@ import type {
   EventData 
 } from '../types/qr';
 
+const escapeVCardField = (str: string = ''): string => {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+};
+
+const escapeEventField = (str: string = ''): string => {
+  return str
+    .replace(/\\/g, '\\\\')
+    .replace(/;/g, '\\;')
+    .replace(/,/g, '\\,')
+    .replace(/\n/g, '\\n');
+};
+
 export const formatWifi = (data: WifiData): string => {
   const { ssid, password, encryption, hidden } = data;
   const escapedSsid = ssid.replace(/([\\;:,"])/g, '\\$1');
@@ -17,20 +33,21 @@ export const formatWifi = (data: WifiData): string => {
 };
 
 export const formatVCard = (data: VCardData): string => {
+  const fn = `${data.firstName} ${data.lastName}`.trim();
   const lines = [
     'BEGIN:VCARD',
     'VERSION:3.0',
-    `N:${data.lastName};${data.firstName};;;`,
-    `FN:${data.firstName} ${data.lastName}`.trim(),
+    `N:${escapeVCardField(data.lastName)};${escapeVCardField(data.firstName)};;;`,
+    `FN:${escapeVCardField(fn)}`,
   ];
 
-  if (data.organization) lines.push(`ORG:${data.organization}`);
-  if (data.title) lines.push(`TITLE:${data.title}`);
-  if (data.phone) lines.push(`TEL;TYPE=CELL:${data.phone}`);
-  if (data.email) lines.push(`EMAIL;TYPE=INTERNET:${data.email}`);
-  if (data.website) lines.push(`URL:${data.website}`);
+  if (data.organization) lines.push(`ORG:${escapeVCardField(data.organization)}`);
+  if (data.title) lines.push(`TITLE:${escapeVCardField(data.title)}`);
+  if (data.phone) lines.push(`TEL;TYPE=CELL:${escapeVCardField(data.phone)}`);
+  if (data.email) lines.push(`EMAIL;TYPE=INTERNET:${escapeVCardField(data.email)}`);
+  if (data.website) lines.push(`URL:${escapeVCardField(data.website)}`);
   if (data.street || data.city || data.country) {
-    lines.push(`ADR;TYPE=WORK:;;${data.street};${data.city};;;${data.country}`);
+    lines.push(`ADR;TYPE=WORK:;;${escapeVCardField(data.street)};${escapeVCardField(data.city)};;;${escapeVCardField(data.country)}`);
   }
   lines.push('END:VCARD');
   return lines.join('\n');
@@ -41,7 +58,7 @@ export const formatEmail = (data: EmailData): string => {
   if (data.subject) params.push(`subject=${encodeURIComponent(data.subject)}`);
   if (data.body) params.push(`body=${encodeURIComponent(data.body)}`);
   const query = params.length > 0 ? `?${params.join('&')}` : '';
-  return `mailto:${data.email}${query}`;
+  return `mailto:${encodeURIComponent(data.email)}${query}`;
 };
 
 export const formatSms = (data: SmsData): string => {
@@ -61,17 +78,20 @@ export const formatWhatsapp = (data: WhatsappData): string => {
 export const formatCrypto = (data: CryptoData): string => {
   const { coin, address, amount } = data;
   if (!address) return '';
+  const cleanAddress = address.trim();
+  const encodedAmount = amount ? encodeURIComponent(amount.trim()) : '';
+
   switch (coin) {
     case 'BTC':
-      return amount ? `bitcoin:${address}?amount=${amount}` : `bitcoin:${address}`;
+      return encodedAmount ? `bitcoin:${cleanAddress}?amount=${encodedAmount}` : `bitcoin:${cleanAddress}`;
     case 'ETH':
-      return amount ? `ethereum:${address}?value=${amount}` : `ethereum:${address}`;
+      return encodedAmount ? `ethereum:${cleanAddress}?value=${encodedAmount}` : `ethereum:${cleanAddress}`;
     case 'SOL':
-      return amount ? `solana:${address}?amount=${amount}` : `solana:${address}`;
+      return encodedAmount ? `solana:${cleanAddress}?amount=${encodedAmount}` : `solana:${cleanAddress}`;
     case 'UPI':
-      return amount ? `upi://pay?pa=${address}&am=${amount}` : `upi://pay?pa=${address}`;
+      return encodedAmount ? `upi://pay?pa=${cleanAddress}&am=${encodedAmount}` : `upi://pay?pa=${cleanAddress}`;
     default:
-      return address;
+      return cleanAddress;
   }
 };
 
@@ -79,17 +99,24 @@ export const formatEvent = (data: EventData): string => {
   const formatDate = (dtStr: string) => {
     if (!dtStr) return '';
     const date = new Date(dtStr);
+    if (isNaN(date.getTime())) return '';
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
   const lines = [
     'BEGIN:VEVENT',
-    `SUMMARY:${data.title}`,
+    `SUMMARY:${escapeEventField(data.title)}`,
   ];
-  if (data.startDate) lines.push(`DTSTART:${formatDate(data.startDate)}`);
-  if (data.endDate) lines.push(`DTEND:${formatDate(data.endDate)}`);
-  if (data.location) lines.push(`LOCATION:${data.location}`);
-  if (data.description) lines.push(`DESCRIPTION:${data.description}`);
+  if (data.startDate) {
+    const formattedStart = formatDate(data.startDate);
+    if (formattedStart) lines.push(`DTSTART:${formattedStart}`);
+  }
+  if (data.endDate) {
+    const formattedEnd = formatDate(data.endDate);
+    if (formattedEnd) lines.push(`DTEND:${formattedEnd}`);
+  }
+  if (data.location) lines.push(`LOCATION:${escapeEventField(data.location)}`);
+  if (data.description) lines.push(`DESCRIPTION:${escapeEventField(data.description)}`);
   lines.push('END:VEVENT');
   return lines.join('\n');
 };

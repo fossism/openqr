@@ -61,10 +61,11 @@ https://openqr.io/table-3, Table 3`
     const zip = new JSZip();
     const folder = zip.folder('openqr_batch_codes');
 
-    const total = batchItems.length;
+    const filenameCountMap: Record<string, number> = {};
 
     for (let i = 0; i < total; i++) {
       const item = batchItems[i];
+      let tempDiv: HTMLDivElement | null = null;
       try {
         const itemConfig = { ...config };
 
@@ -75,7 +76,7 @@ https://openqr.io/table-3, Table 3`
         const options = createQRCodeOptions(itemConfig, item.content);
         const qr = new QRCodeStyling(options);
 
-        const tempDiv = document.createElement('div');
+        tempDiv = document.createElement('div');
         tempDiv.style.position = 'absolute';
         tempDiv.style.left = '-9999px';
         document.body.appendChild(tempDiv);
@@ -89,13 +90,19 @@ https://openqr.io/table-3, Table 3`
           const dataUrl = finalCanvas.toDataURL('image/png');
           const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
 
-          const safeFilename = `${item.label.replace(/[^a-z0-9_-]/gi, '_')}.png`;
+          const rawLabel = item.label.replace(/[^a-z0-9_-]/gi, '_') || `qr_${i + 1}`;
+          const currentCount = (filenameCountMap[rawLabel] || 0) + 1;
+          filenameCountMap[rawLabel] = currentCount;
+          const safeFilename = currentCount > 1 ? `${rawLabel}_${currentCount}.png` : `${rawLabel}.png`;
+
           folder?.file(safeFilename, base64Data, { base64: true });
         }
-
-        document.body.removeChild(tempDiv);
       } catch (err) {
         console.error('Batch QR render error:', err);
+      } finally {
+        if (tempDiv && document.body.contains(tempDiv)) {
+          document.body.removeChild(tempDiv);
+        }
       }
 
       setProgress(Math.round(((i + 1) / total) * 100));
