@@ -56,3 +56,6 @@ Thumbs.db
 *.user
 .project
 .settings/
+
+# Documentation / Scratch
+standout.md

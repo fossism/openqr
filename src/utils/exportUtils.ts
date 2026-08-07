@@ -20,7 +20,7 @@ export const triggerConfetti = () => {
  */
 export const sanitizeFilename = (filename: string, fallback: string = 'openqr-code'): string => {
   if (!filename) return fallback;
-  const clean = filename.replace(/[^a-zA-Z0-9_\-\.\s]/g, '_').trim();
+  const clean = filename.replace(/[^a-zA-Z0-9_\-.\s]/g, '_').trim();
   return clean || fallback;
 };
 
@@ -55,7 +55,7 @@ export const exportSvgFile = (svgElement: SVGElement, filename: string = 'openqr
   const serializer = new XMLSerializer();
   let svgData = serializer.serializeToString(svgElement);
 
-  if (!svgData.match(/^<svg[^>]+xmlns="http\:\/\/www\.w3\.org\/2000\/svg"/)) {
+  if (!svgData.match(/^<svg[^>]+xmlns="http:\/\/www\.w3\.org\/2000\/svg"/)) {
     svgData = svgData.replace(/^<svg/, '<svg xmlns="http://www.w3.org/2000/svg"');
   }
 

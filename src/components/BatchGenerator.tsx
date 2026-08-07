@@ -51,9 +51,29 @@ https://openqr.io/table-3, Table 3`
   };
 
   const handleGenerateZip = async () => {
-    if (batchItems.length === 0) {
-      handleParseInput();
+    let itemsToProcess = batchItems;
+    if (itemsToProcess.length === 0) {
+      const lines = inputText
+        .split('\n')
+        .map((line) => line.trim())
+        .filter(Boolean);
+
+      itemsToProcess = lines.map((line, idx) => {
+        const parts = line.split(',');
+        const content = parts[0].trim();
+        const label = parts[1]?.trim() || `QR_${idx + 1}`;
+        return {
+          id: `batch_${idx}_${Date.now()}`,
+          content,
+          label,
+          status: 'pending',
+        };
+      });
+      setBatchItems(itemsToProcess);
     }
+
+    const total = itemsToProcess.length;
+    if (total === 0) return;
 
     setIsProcessing(true);
     setProgress(0);
@@ -64,7 +84,7 @@ https://openqr.io/table-3, Table 3`
     const filenameCountMap: Record<string, number> = {};
 
     for (let i = 0; i < total; i++) {
-      const item = batchItems[i];
+      const item = itemsToProcess[i];
       let tempDiv: HTMLDivElement | null = null;
       try {
         const itemConfig = { ...config };
