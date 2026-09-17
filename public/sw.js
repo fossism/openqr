@@ -1,6 +1,7 @@
 /* Minimal offline cache for OpenQR static shell. App logic stays client-side. */
 const CACHE = 'openqr-v1';
-const CORE = ['/', '/index.html', '/manifest.webmanifest', '/favicon.svg'];
+// Relative to the service-worker scope so project subpaths (e.g. /openqr/) work.
+const CORE = ['./', './index.html', './manifest.webmanifest', './favicon.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -23,6 +24,6 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE).then((cache) => cache.put(event.request, copy).catch(() => undefined));
         return res;
       })
-      .catch(() => caches.match(event.request).then((hit) => hit || caches.match('/index.html')))
+      .catch(() => caches.match(event.request).then((hit) => hit || caches.match('./index.html')))
   );
 });
