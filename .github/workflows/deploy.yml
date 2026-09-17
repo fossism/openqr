@@ -17,6 +17,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      PAGES_BASE: /openqr/
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

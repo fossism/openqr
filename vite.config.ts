@@ -4,7 +4,8 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Project site: https://fossism.github.io/openqr/
-  base: '/openqr/',
+  // GitHub Pages project site needs '/openqr/'; Cloudflare/root deploys use '/'.
+  // Set PAGES_BASE=/openqr/ in the Pages workflow (see .github/workflows/deploy.yml).
+  base: process.env.PAGES_BASE ?? '/',
   plugins: [react(), tailwindcss()],
 });
