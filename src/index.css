@@ -1,10 +1,51 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-teal: #16564F;
+  --color-brand-mustard: #E8B84B;
+  --color-brand-ink: #241E1B;
+  --color-brand-cream: #FFF8F3;
+}
+
 @layer base {
+  * {
+    border-radius: 0 !important;
+  }
+
   body {
-    background-color: #020617;
-    color: #f8fafc;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: #FFF8F3;
+    color: #241E1B;
+    font-family: 'Newsreader', Georgia, 'Times New Roman', serif;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: 'Archivo Black', 'Arial Black', sans-serif;
+    letter-spacing: -0.01em;
+  }
+
+  .font-mono, code, kbd, pre {
+    font-family: 'Space Mono', ui-monospace, monospace !important;
+  }
+
+  label, nav {
+    font-family: 'Space Mono', ui-monospace, monospace;
+  }
+
+  a {
+    color: #16564F;
+  }
+
+  ::selection {
+    background-color: #E8B84B;
+    color: #241E1B;
+  }
+
+  input[type="range"] {
+    accent-color: #16564F;
+  }
+
+  input[type="checkbox"] {
+    accent-color: #16564F;
   }
 }
 
@@ -23,21 +64,21 @@
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Custom scrollbar styling */
+/* Bodhya scrollbar — cream track, ink thumb, teal hover. Sharp. */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.5);
+  background: #FFF8F3;
+  border-left: 1px solid #241E1B;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(51, 65, 85, 0.8);
-  border-radius: 9999px;
+  background: #241E1B;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.8);
+  background: #16564F;
 }

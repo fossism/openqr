@@ -93,38 +93,17 @@ export const createQRCodeOptions = (
   return options;
 };
 
-const roundRectPath = (
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  r: number
-) => {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.lineTo(x + w - r, y);
-  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
-  ctx.lineTo(x + w, y + h - r);
-  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
-  ctx.lineTo(x + r, y + h);
-  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
-  ctx.lineTo(x, y + r);
-  ctx.quadraticCurveTo(x, y, x + r, y);
-  ctx.closePath();
-};
-
 /**
- * Draws frame overlay around a rendered QR canvas.
+ * Draws frame overlay around a rendered QR canvas — sharp rectangles only (brand).
  * - badge-top / badge-bottom: colored card + CTA text
- * - card-rounded: minimal rounded card, no badge text
+ * - card-rounded: minimal sharp card, no badge text (kept sharp per branding)
  * - ticket: badge-bottom with perforated side notches + dashed divider
- * Transparent QRs get an opaque white inner panel when framed so they stay scannable.
+ * Transparent QRs get an opaque cream inner panel when framed so they stay scannable.
  */
 export const drawFrameOnCanvas = (
   rawCanvas: HTMLCanvasElement,
   frameConfig: QRDesignConfig['frame'],
-  bgColor: string = '#ffffff',
+  bgColor: string = '#FFF8F3',
   transparentBackground = false
 ): HTMLCanvasElement => {
   if (frameConfig.style === 'none') {
@@ -146,35 +125,30 @@ export const drawFrameOnCanvas = (
   const ctx = framedCanvas.getContext('2d');
   if (!ctx) return rawCanvas;
 
-  // Outer card
-  const radius = frameConfig.style === 'card-rounded' ? 24 : 16;
-  ctx.fillStyle = frameConfig.backgroundColor || '#4f46e5';
-  roundRectPath(ctx, 0, 0, totalWidth, totalHeight, radius);
-  ctx.fill();
+  // Outer card — sharp rectangle, brand teal default
+  ctx.fillStyle = frameConfig.backgroundColor || '#241E1B';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = frameConfig.borderColor || '#3730a3';
-  roundRectPath(ctx, 2, 2, totalWidth - 4, totalHeight - 4, Math.max(radius - 2, 4));
-  ctx.stroke();
+  ctx.lineWidth = 4;
+  ctx.strokeStyle = frameConfig.borderColor || '#241E1B';
+  ctx.strokeRect(2, 2, totalWidth - 4, totalHeight - 4);
+
+  // Mustard top rule for brand
+  ctx.fillStyle = '#E8B84B';
+  ctx.fillRect(0, 0, totalWidth, 6);
 
   // Inner QR panel — always opaque when framed for scannability
   const innerMargin = 12;
   const isTopBadge = frameConfig.style === 'badge-top';
   const innerY = isTopBadge && hasBadge ? badgeHeight + innerMargin : innerMargin;
   const innerH = qrHeight + framePadding;
-  const opaqueInner = transparentBackground ? '#ffffff' : bgColor;
+  const opaqueInner = transparentBackground ? '#FFF8F3' : bgColor;
 
   ctx.fillStyle = opaqueInner;
-  if (typeof (ctx as unknown as { roundRect?: unknown }).roundRect === 'function') {
-    ctx.beginPath();
-    (ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void }).roundRect(
-      innerMargin, innerY, totalWidth - innerMargin * 2, innerH, 12
-    );
-    ctx.fill();
-  } else {
-    roundRectPath(ctx, innerMargin, innerY, totalWidth - innerMargin * 2, innerH, 12);
-    ctx.fill();
-  }
+  ctx.fillRect(innerMargin, innerY, totalWidth - innerMargin * 2, innerH);
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = '#241E1B';
+  ctx.strokeRect(innerMargin, innerY, totalWidth - innerMargin * 2, innerH);
 
   const qrX = framePadding;
   const qrY = isTopBadge && hasBadge ? badgeHeight + framePadding / 2 + innerMargin : framePadding;
@@ -184,7 +158,7 @@ export const drawFrameOnCanvas = (
     // Ticket divider + notches
     if (frameConfig.style === 'ticket') {
       const dividerY = totalHeight - badgeHeight - 6;
-      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.strokeStyle = '#E8B84B';
       ctx.lineWidth = 2;
       ctx.setLineDash([8, 6]);
       ctx.beginPath();
@@ -194,7 +168,7 @@ export const drawFrameOnCanvas = (
       ctx.setLineDash([]);
 
       // Side cutouts to suggest a ticket stub (leave border gap open)
-      ctx.fillStyle = '#000000';
+      ctx.fillStyle = '#16564F'; // erased via destination-out
       ctx.globalCompositeOperation = 'destination-out';
       ctx.beginPath();
       ctx.arc(0, dividerY, 12, 0, Math.PI * 2);
@@ -205,7 +179,7 @@ export const drawFrameOnCanvas = (
       ctx.globalCompositeOperation = 'source-over';
     }
 
-    ctx.fillStyle = frameConfig.textColor || '#ffffff';
+    ctx.fillStyle = frameConfig.textColor || '#FFF8F3';
     const fontSize = Math.min(Math.max(frameConfig.fontSize || 15, 10), 28);
     ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
     ctx.textAlign = 'center';
@@ -292,7 +266,7 @@ export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig =>
 };
 
 /**
- * Bake a logo background (white circle/square) into the image itself so
+ * Bake a logo background (sharp square per brand) into the image itself so
  * qr-code-styling — which has no native logo-background option — still shows one.
  */
 export const bakeLogoWithBackground = (
@@ -313,7 +287,7 @@ export const bakeLogoWithBackground = (
         canvas.height = size;
         const ctx = canvas.getContext('2d');
         if (!ctx) return resolve(src);
-        ctx.fillStyle = backgroundColor || '#ffffff';
+        ctx.fillStyle = backgroundColor || '#FFF8F3';
         const cx = size / 2;
         const cy = size / 2;
         const r = size / 2 - 4;
@@ -322,9 +296,8 @@ export const bakeLogoWithBackground = (
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          const rad = 28;
-          roundRectPath(ctx, 4, 4, size - 8, size - 8, rad);
-          ctx.fill();
+          // Sharp rectangle per brand guideline
+          ctx.fillRect(4, 4, size - 8, size - 8);
         }
         const dx = (size - img.naturalWidth) / 2;
         const dy = (size - img.naturalHeight) / 2;

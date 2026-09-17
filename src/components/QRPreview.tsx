@@ -73,8 +73,13 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
             containerRef.current.innerHTML = '';
             canvasToVerify.style.maxWidth = '100%';
             canvasToVerify.style.height = 'auto';
-            canvasToVerify.style.borderRadius = '16px';
+            canvasToVerify.style.borderRadius = '0';
             containerRef.current.appendChild(canvasToVerify);
+          } else {
+            // Constrain raw canvas to the preview box (sharp, no overflow)
+            rawCanvas.style.maxWidth = '100%';
+            rawCanvas.style.height = 'auto';
+            rawCanvas.style.borderRadius = '0';
           }
 
           // Run scan verification
@@ -122,13 +127,13 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
         </div>
 
         {/* QR Code Canvas Display Box */}
-        <div className="relative group flex items-center justify-center p-8 rounded-3xl bg-slate-900/90 border border-slate-800 shadow-2xl shadow-indigo-950/40 backdrop-blur-xl transition-all hover:border-slate-700/80 w-full max-w-[380px]">
+        <div className="relative group flex items-center justify-center p-8 rounded-none bg-[#FFF8F3] border border-[#241E1B] shadow-[4px_4px_0_#241E1B] backdrop-blur-xl transition-all hover:border-[#241E1B] w-full max-w-[380px]">
           {/* Zoom controls overlay */}
-          <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-slate-800/80 backdrop-blur-md rounded-xl p-1 border border-slate-700/60 z-10">
+          <div className="absolute top-3 right-3 flex items-center gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity bg-[#FFF8F3] backdrop-blur-md rounded-none p-1 border border-[#241E1B]/30 z-10">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.min(z + 0.15, 1.4))}
-              className="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-700/50"
+              className="p-1.5 text-[#241E1B] hover:text-[#FFF8F3] rounded-none hover:bg-[#16564F]"
               title="Zoom In"
               aria-label="Zoom preview in"
             >
@@ -137,7 +142,7 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(z - 0.15, 0.7))}
-              className="p-1.5 text-slate-300 hover:text-white rounded-lg hover:bg-slate-700/50"
+              className="p-1.5 text-[#241E1B] hover:text-[#FFF8F3] rounded-none hover:bg-[#16564F]"
               title="Zoom Out"
               aria-label="Zoom preview out"
             >
@@ -154,55 +159,55 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
 
         {/* Payload stats */}
         <div className="w-full flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="px-2 py-1 rounded-lg bg-slate-800 border border-slate-700/60 text-slate-300 font-mono">
+          <span className="px-2 py-1 rounded-none bg-[#FFF8F3] border border-[#241E1B]/30 text-[#241E1B] font-mono">
             {density.length} chars
           </span>
           <span
-            className={`px-2 py-1 rounded-lg border font-medium ${
+            className={`px-2 py-1 rounded-none border-2 font-bold ${
               density.level === 'easy'
-                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300'
+                ? 'bg-[#16564F]/10 border-[#16564F] text-[#16564F]'
                 : density.level === 'medium'
-                  ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
+                  ? 'bg-[#FFF8F3] border-[#241E1B] text-[#241E1B]'
                   : density.level === 'dense'
-                    ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
-                    : 'bg-red-500/10 border-red-500/30 text-red-300'
+                    ? 'bg-[#241E1B] border-[#241E1B] text-[#FFF8F3]'
+                    : 'bg-[#241E1B] border-[#E8B84B] text-[#E8B84B]'
             }`}
             title={density.hint}
           >
             {density.level === 'easy' ? 'Compact' : density.level === 'medium' ? 'Medium' : density.level === 'dense' ? 'Dense' : 'Very dense'}
           </span>
           {lowContrast && (
-            <span className="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300" title={`Contrast ratio ${contrast?.toFixed(2)}:1. Aim for at least 3:1 for reliable scanning.`}>
+            <span className="px-2 py-1 rounded-none bg-[#241E1B]/5 border border-[#241E1B] text-[#241E1B]" title={`Contrast ratio ${contrast?.toFixed(2)}:1. Aim for at least 3:1 for reliable scanning.`}>
               Low contrast {contrast?.toFixed(1)}:1
             </span>
           )}
         </div>
-        <p className="w-full text-[11px] text-slate-500 -mt-3" title={density.hint}>{density.hint}</p>
+        <p className="w-full text-[11px] text-[#241E1B]/60 -mt-3" title={density.hint}>{density.hint}</p>
 
         {/* Payload Quick Bar */}
-        <div className="w-full p-3 rounded-2xl bg-slate-900/70 border border-slate-800/80 flex items-center justify-between gap-2 text-xs">
+        <div className="w-full p-3 rounded-none bg-[#FFF8F3] border border-[#241E1B] flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 truncate pr-2 min-w-0">
-            <span className="text-slate-500 font-medium shrink-0">Payload:</span>
-            <span className="text-slate-300 font-mono truncate">{payloadText || 'https://openqr.io'}</span>
+            <span className="text-[#241E1B]/60 font-medium shrink-0">Payload:</span>
+            <span className="text-[#241E1B] font-mono truncate">{payloadText || 'https://openqr.io'}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
               onClick={handleCopyImage}
               title="Copy QR image to clipboard"
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] text-[#241E1B] font-medium transition-colors"
             >
-              {copiedImage ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <ImageIcon className="w-3.5 h-3.5" />}
+              {copiedImage ? <Check className="w-3.5 h-3.5 text-[#241E1B]" /> : <ImageIcon className="w-3.5 h-3.5" />}
               <span className="hidden sm:inline">{copiedImage ? 'Copied' : 'Image'}</span>
             </button>
             <button
               type="button"
               onClick={handleCopyPayload}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium shrink-0 transition-colors"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] text-[#241E1B] font-medium shrink-0 transition-colors"
             >
               {copied ? (
                 <>
-                  <Check className="w-3.5 h-3.5 text-emerald-400" /> Copied
+                  <Check className="w-3.5 h-3.5 text-[#241E1B]" /> Copied
                 </>
               ) : (
                 <>

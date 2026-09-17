@@ -162,7 +162,7 @@ https://openqr.io/table-3, Table 3`
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FFF8F3] backdrop-blur-md animate-fadeIn"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -170,15 +170,15 @@ https://openqr.io/table-3, Table 3`
       aria-modal="true"
       aria-label="Batch QR generator"
     >
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-5 max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+      <div className="relative w-full max-w-2xl bg-[#FFF8F3] border border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-5 max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between border-b border-[#241E1B] pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400">
+            <div className="p-2 rounded-none bg-[#241E1B]/5 text-[#241E1B]">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Batch QR Generator</h3>
-              <p className="text-xs text-slate-400">
+              <h3 className="text-lg font-bold text-[#FFF8F3]">Batch QR Generator</h3>
+              <p className="text-xs text-[#241E1B]/70">
                 Bulk generate multiple QR codes and export all as a ZIP archive
               </p>
             </div>
@@ -187,15 +187,15 @@ https://openqr.io/table-3, Table 3`
             type="button"
             onClick={onClose}
             aria-label="Close batch modal"
-            className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-none bg-[#FFF8F3] text-[#241E1B]/70 hover:text-[#FFF8F3] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="batch-input" className="block text-xs font-medium text-slate-300 flex items-center gap-1.5">
-            <FileSpreadsheet className="w-4 h-4 text-cyan-400" />
+          <label htmlFor="batch-input" className="block text-xs font-medium text-[#241E1B] flex items-center gap-1.5">
+            <FileSpreadsheet className="w-4 h-4 text-[#241E1B]" />
             Paste Multi-Line List or CSV Format (URL / Content, Label)
           </label>
           <textarea
@@ -204,43 +204,43 @@ https://openqr.io/table-3, Table 3`
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="https://example.com/item1, Table 1&#10;https://example.com/item2, Table 2"
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-2xl px-4 py-3 text-slate-100 placeholder-slate-500 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#16564F]"
           />
-          <p className="text-[11px] text-slate-500">
-            Each line represents one QR code. Use comma <code className="text-cyan-300 font-mono">,</code> to separate URL payload from custom badge text.
+          <p className="text-[11px] text-[#241E1B]/60">
+            Each line represents one QR code. Use comma <code className="text-[#241E1B] font-mono">,</code> to separate URL payload from custom badge text.
           </p>
           <div>
             <button
               type="button"
               onClick={handleParseInput}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 transition-colors"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B] text-xs text-[#241E1B] transition-colors"
             >
-              <Eye className="w-3.5 h-3.5 text-cyan-300" />
+              <Eye className="w-3.5 h-3.5 text-[#241E1B]" />
               Preview {inputText.split('\n').filter((l) => l.trim()).length} rows
             </button>
           </div>
         </div>
 
         {batchItems.length > 0 && (
-          <div className="rounded-2xl border border-slate-800 overflow-hidden">
-            <div className="px-4 py-2 bg-slate-800/60 text-[11px] text-slate-400 font-medium">
+          <div className="rounded-none border border-[#241E1B] overflow-hidden">
+            <div className="px-4 py-2 bg-[#FFF8F3] text-[11px] text-[#241E1B]/70 font-medium">
               {batchItems.filter((b) => b.status !== 'error').length} valid / {batchItems.length} total
             </div>
-            <ul className="max-h-40 overflow-y-auto divide-y divide-slate-800/80 text-xs">
+            <ul className="max-h-40 overflow-y-auto divide-y divide-[#241E1B]/20 text-xs">
               {batchItems.slice(0, 50).map((item) => (
                 <li key={item.id} className="px-4 py-2 flex items-center justify-between gap-3">
-                  <span className="truncate font-mono text-slate-300" title={item.content}>
+                  <span className="truncate font-mono text-[#241E1B]" title={item.content}>
                     {item.content || '(empty)'}
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
-                    <span className="text-slate-500 truncate max-w-[120px]">{item.label}</span>
+                    <span className="text-[#241E1B]/60 truncate max-w-[120px]">{item.label}</span>
                     <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                      className={`px-2 py-0.5 rounded-none text-[10px] font-bold ${
                         item.status === 'ready'
-                          ? 'bg-emerald-500/15 text-emerald-300'
+                          ? 'bg-[#E8B84B] text-[#241E1B]'
                           : item.status === 'error'
-                            ? 'bg-red-500/15 text-red-300'
-                            : 'bg-slate-700/60 text-slate-300'
+                            ? 'bg-[#241E1B]/5 text-[#241E1B]'
+                            : 'bg-[#241E1B]/5 text-[#241E1B]'
                       }`}
                     >
                       {item.status}
@@ -250,40 +250,40 @@ https://openqr.io/table-3, Table 3`
               ))}
             </ul>
             {batchItems.length > 50 && (
-              <div className="px-4 py-2 text-[11px] text-slate-500">Showing first 50 rows.</div>
+              <div className="px-4 py-2 text-[11px] text-[#241E1B]/60">Showing first 50 rows.</div>
             )}
           </div>
         )}
 
         {error && (
-          <p className="text-xs text-red-300 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2" role="alert">
+          <p className="text-xs text-[#241E1B] bg-[#241E1B]/5 border border-[#241E1B] rounded-none px-3 py-2" role="alert">
             {error}
           </p>
         )}
 
         {isProcessing && (
           <div className="space-y-1.5">
-            <div className="flex justify-between text-xs text-slate-300">
+            <div className="flex justify-between text-xs text-[#241E1B]">
               <span className="flex items-center gap-1.5">
-                <RefreshCw className="w-3.5 h-3.5 animate-spin text-cyan-400" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#241E1B]" />
                 Generating batch QR canvas images...
               </span>
-              <span className="font-bold text-cyan-400">{progress}%</span>
+              <span className="font-bold text-[#241E1B]">{progress}%</span>
             </div>
-            <div className="w-full h-2 rounded-full bg-slate-800 overflow-hidden">
+            <div className="w-full h-2 rounded-none bg-[#FFF8F3] overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-cyan-500 to-indigo-500 transition-all duration-200"
+                className="h-full bg-[#16564F] transition-all duration-200"
                 style={{ width: `${progress}%` }}
               />
             </div>
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 border-t border-slate-800 pt-4">
+        <div className="flex items-center justify-end gap-3 border-t border-[#241E1B] pt-4">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors"
+            className="px-4 py-2.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] text-[#241E1B] text-xs font-medium transition-colors"
           >
             Cancel
           </button>
@@ -292,7 +292,7 @@ https://openqr.io/table-3, Table 3`
             type="button"
             onClick={handleGenerateZip}
             disabled={isProcessing || !inputText.trim()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-medium text-xs shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-none bg-[#241E1B] hover:bg-[#16564F] text-[#FFF8F3] font-bold border-2 border-[#241E1B] text-xs shadow-[4px_4px_0_#241E1B] transition-all disabled:opacity-50"
           >
             <Download className="w-4 h-4" />
             Generate & Download ZIP

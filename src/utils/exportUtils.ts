@@ -8,7 +8,7 @@ export const triggerConfetti = () => {
       particleCount: 50,
       spread: 60,
       origin: { y: 0.8 },
-      colors: ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ec4899'],
+      colors: ['#16564F', '#E8B84B', '#241E1B', '#16564F', '#E8B84B'],
     });
   } catch {
     // Ignore if confetti fails in headless env
@@ -90,28 +90,34 @@ export const exportPdfDocument = (
   const x = (pageWidth - qrSize) / 2;
   const y = 50;
 
-  // Modern clean Header
+  // Brand header — teal on cream
+  pdf.setFillColor(255, 248, 243); // #FFF8F3
+  pdf.rect(0, 0, 210, 297, 'F');
+  pdf.setFillColor(22, 86, 79); // #16564F
+  pdf.rect(0, 0, 210, 18, 'F');
+  pdf.setFillColor(232, 184, 75); // #E8B84B
+  pdf.rect(0, 18, 210, 4, 'F');
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(22);
-  pdf.setTextColor(15, 23, 42); // slate-900
-  pdf.text('OPEN QR CODE', pageWidth / 2, 30, { align: 'center' });
+  pdf.setTextColor(22, 86, 79); // teal
+  pdf.text('OPEN QR CODE', pageWidth / 2, 36, { align: 'center' });
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(14);
-  pdf.setTextColor(71, 85, 105); // slate-600
-  pdf.text(titleText, pageWidth / 2, 40, { align: 'center' });
+  pdf.setTextColor(22, 86, 79);
+  pdf.text(titleText, pageWidth / 2, 44, { align: 'center' });
 
   // Draw QR Image
   pdf.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
 
-  // Border frame around QR on PDF
-  pdf.setDrawColor(226, 232, 240); // slate-200
-  pdf.setLineWidth(0.5);
+  // Border frame around QR on PDF — teal sharp
+  pdf.setDrawColor(22, 86, 79);
+  pdf.setLineWidth(1.2);
   pdf.rect(x - 5, y - 5, qrSize + 10, qrSize + 10);
 
   // Footer note
   pdf.setFontSize(10);
-  pdf.setTextColor(148, 163, 184); // slate-400
+  pdf.setTextColor(22, 86, 79);
   pdf.text('Generated using OpenQR — Privacy-First Open Source QR Generator', pageWidth / 2, y + qrSize + 25, { align: 'center' });
 
   const safeName = sanitizeFilename(filename, 'openqr-document');

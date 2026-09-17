@@ -8,21 +8,21 @@ interface HeaderProps {
 
 export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) => {
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-slate-800/80 bg-slate-950/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-40 w-full border-b-4 border-[#E8B84B] bg-[#241E1B]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="p-2 rounded-2xl bg-gradient-to-tr from-indigo-600 to-cyan-500 text-white shadow-lg shadow-indigo-500/20">
+          <div className="p-2 bg-[#E8B84B] text-[#241E1B] border-2 border-[#FFF8F3]">
             <QrCode className="w-6 h-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold tracking-tight text-white font-sans">OpenQR</h1>
-              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-semibold border border-emerald-500/20 flex items-center gap-1">
-                <ShieldCheck className="w-3 h-3" /> No Login / 100% Client-Side
+              <h1 className="text-lg tracking-tight text-[#FFF8F3]">OpenQR</h1>
+              <span className="hidden min-[500px]:flex px-2 py-0.5 bg-[#16564F] text-[#FFF8F3] text-[10px] font-bold border-2 border-[#E8B84B] items-center gap-1">
+                <ShieldCheck className="w-3 h-3 text-[#E8B84B]" /> No Login / 100% Client-Side
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 hidden sm:block">
+            <p className="text-[11px] text-[#FFF8F3]/70 hidden sm:block">
               Open-source, highly customizable & reliable QR code generator
             </p>
           </div>
@@ -33,18 +33,18 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) =>
           <button
             type="button"
             onClick={onOpenPresets}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#16564F] hover:bg-[#FFF8F3] hover:text-[#241E1B] text-[#FFF8F3] border-2 border-[#FFF8F3] text-xs font-bold transition-all"
           >
-            <Palette className="w-3.5 h-3.5 text-indigo-400" />
+            <Palette className="w-3.5 h-3.5 text-[#E8B84B]" />
             <span className="hidden sm:inline">Theme Presets</span>
           </button>
 
           <button
             type="button"
             onClick={onOpenBatch}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-800 text-xs font-medium transition-all"
+            className="flex items-center gap-1.5 px-3 py-2 bg-[#E8B84B] hover:bg-[#FFF8F3] text-[#241E1B] border-2 border-[#FFF8F3] text-xs font-bold transition-all"
           >
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
+            <Layers className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Batch Generator</span>
           </button>
 
@@ -52,7 +52,7 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) =>
             href="https://github.com/fossism/openqr"
             target="_blank"
             rel="noreferrer"
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors"
+            className="p-2 bg-[#241E1B] hover:bg-[#16564F] text-[#FFF8F3] border-2 border-[#FFF8F3] transition-colors"
             title="OpenQR Open Source Code"
             aria-label="OpenQR GitHub repository"
           >

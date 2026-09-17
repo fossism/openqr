@@ -16,14 +16,14 @@ export const CryptoForm: React.FC<CryptoFormProps> = ({ data, onChange }) => {
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="sm:col-span-1">
-          <label className="block text-sm font-medium text-slate-300 mb-1.5 flex items-center gap-2">
-            <Coins className="w-4 h-4 text-amber-400" /> Currency / Network
+          <label className="block text-sm font-medium text-[#241E1B] mb-1.5 flex items-center gap-2">
+            <Coins className="w-4 h-4 text-[#241E1B]" /> Currency / Network
           </label>
           <select
             value={data.coin}
             onChange={(e) => updateField('coin', e.target.value as any)}
             aria-label="Currency / Network"
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl px-3 py-3 text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-sm"
+            className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-3 py-3 text-[#241E1B] focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm"
           >
             <option value="BTC">Bitcoin (BTC)</option>
             <option value="ETH">Ethereum (ETH)</option>
@@ -33,7 +33,7 @@ export const CryptoForm: React.FC<CryptoFormProps> = ({ data, onChange }) => {
         </div>
 
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-slate-300 mb-1.5">
+          <label className="block text-sm font-medium text-[#241E1B] mb-1.5">
             Wallet Address or VPA ID
           </label>
           <input
@@ -41,13 +41,13 @@ export const CryptoForm: React.FC<CryptoFormProps> = ({ data, onChange }) => {
             value={data.address}
             onChange={(e) => updateField('address', e.target.value)}
             placeholder={data.coin === 'UPI' ? 'username@bank' : '0x... or bc1q...'}
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-sm font-mono"
+            className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm font-mono"
           />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        <label className="block text-sm font-medium text-[#241E1B] mb-1.5">
           Requested Amount (Optional)
         </label>
         <input
@@ -55,7 +55,7 @@ export const CryptoForm: React.FC<CryptoFormProps> = ({ data, onChange }) => {
           value={data.amount}
           onChange={(e) => updateField('amount', e.target.value)}
           placeholder="0.05"
-          className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl px-4 py-3 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 text-sm font-mono"
+          className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm font-mono"
         />
       </div>
     </div>

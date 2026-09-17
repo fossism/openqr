@@ -137,7 +137,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
-          <label htmlFor="export-filename" className="block text-xs font-medium text-slate-300 mb-1.5">
+          <label htmlFor="export-filename" className="block text-xs font-medium text-[#241E1B] mb-1.5">
             File name
           </label>
           <input
@@ -147,13 +147,13 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
             onChange={(e) => setFilename(e.target.value)}
             placeholder="openqr-code"
             maxLength={60}
-            className="w-full bg-slate-800/80 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+            className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-3.5 py-2.5 text-sm text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F]"
           />
         </div>
         <div>
-          <div className="flex justify-between text-xs text-slate-400 mb-1.5">
-            <span className="font-medium text-slate-300">Export resolution</span>
-            <span className="font-mono text-indigo-400 font-bold">{resolution} px</span>
+          <div className="flex justify-between text-xs text-[#241E1B]/70 mb-1.5">
+            <span className="font-medium text-[#241E1B]">Export resolution</span>
+            <span className="font-mono text-[#241E1B] font-bold">{resolution} px</span>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
             {[512, 1024, 2048, 4096].map((res) => (
@@ -161,10 +161,10 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
                 key={res}
                 type="button"
                 onClick={() => setResolution(res)}
-                className={`py-2 rounded-lg border text-xs font-mono font-medium transition-all ${
+                className={`py-2 rounded-none border text-xs font-mono font-medium transition-all ${
                   resolution === res
-                    ? 'bg-indigo-600/20 border-indigo-500 text-indigo-300'
-                    : 'bg-slate-800/60 border-slate-700/60 text-slate-400 hover:text-slate-200'
+                    ? 'bg-[#16564F]/10 border-[#241E1B] text-[#241E1B]'
+                    : 'bg-[#FFF8F3] border-[#241E1B]/30 text-[#241E1B]/70 hover:text-[#241E1B]'
                 }`}
               >
                 {res >= 1000 ? `${res / 1000}k` : `${res}`}
@@ -175,7 +175,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
       </div>
 
       {config.frame.style !== 'none' && (
-        <p className="text-[11px] text-slate-400 bg-slate-800/60 border border-slate-700/60 rounded-xl px-3 py-2">
+        <p className="text-[11px] text-[#241E1B]/70 bg-[#FFF8F3] border border-[#241E1B]/30 rounded-none px-3 py-2">
           Frame is baked into PNG / WEBP / PDF. SVG export is frameless vector.
         </p>
       )}
@@ -185,7 +185,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           type="button"
           onClick={handleExportPNG}
           disabled={!!busy}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white font-medium text-sm shadow-lg shadow-indigo-600/25 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#241E1B] hover:bg-[#16564F] disabled:opacity-60 text-[#FFF8F3] font-bold text-sm border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B] transition-all"
         >
           {btnBusy('png') ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}
           PNG
@@ -195,9 +195,9 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           type="button"
           onClick={handleExportSVG}
           disabled={!!busy}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-100 font-medium text-sm border border-slate-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
-          {btnBusy('svg') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4 text-cyan-400" />}
+          {btnBusy('svg') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4 text-[#241E1B]" />}
           Vector SVG
         </button>
 
@@ -205,9 +205,9 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           type="button"
           onClick={handleExportPDF}
           disabled={!!busy}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-100 font-medium text-sm border border-slate-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
-          {btnBusy('pdf') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4 text-amber-400" />}
+          {btnBusy('pdf') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4 text-[#241E1B]" />}
           Print PDF
         </button>
 
@@ -215,9 +215,9 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           type="button"
           onClick={handleExportWEBP}
           disabled={!!busy}
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-60 text-slate-100 font-medium text-sm border border-slate-700 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
-          {btnBusy('webp') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-emerald-400" />}
+          {btnBusy('webp') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#241E1B]" />}
           WEBP
         </button>
       </div>
@@ -227,7 +227,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           type="button"
           onClick={handleCopyImage}
           disabled={!!busy}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/60 text-xs text-slate-200 transition-colors disabled:opacity-60"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-xs text-[#241E1B] transition-colors disabled:opacity-60"
         >
           {btnBusy('copy') ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
           Copy image
@@ -235,32 +235,32 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
         <button
           type="button"
           onClick={handleShareLink}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/60 text-xs text-slate-200 transition-colors"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-xs text-[#241E1B] transition-colors"
         >
-          {copiedLink ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Link2 className="w-3.5 h-3.5" />}
+          {copiedLink ? <Check className="w-3.5 h-3.5 text-[#241E1B]" /> : <Link2 className="w-3.5 h-3.5" />}
           {copiedLink ? 'Copied' : 'Share link'}
         </button>
         <button
           type="button"
           onClick={() => exportConfigJson(config, filename || 'openqr-theme')}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/60 text-xs text-slate-200 transition-colors"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-xs text-[#241E1B] transition-colors"
         >
-          <FileJson className="w-3.5 h-3.5 text-indigo-300" />
+          <FileJson className="w-3.5 h-3.5 text-[#241E1B]" />
           Save theme
         </button>
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800/70 hover:bg-slate-700/70 border border-slate-700/60 text-xs text-slate-200 transition-colors"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-xs text-[#241E1B] transition-colors"
         >
-          <Upload className="w-3.5 h-3.5 text-cyan-300" />
+          <Upload className="w-3.5 h-3.5 text-[#241E1B]" />
           Load theme
         </button>
         <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={handleImportFile} className="hidden" />
       </div>
 
       {notice && (
-        <p className="text-xs text-indigo-300 bg-indigo-500/10 border border-indigo-500/30 rounded-xl px-3 py-2" role="status">
+        <p className="text-xs text-[#241E1B] bg-[#241E1B]/5 border border-[#241E1B]/30 rounded-none px-3 py-2" role="status">
           {notice}
         </p>
       )}

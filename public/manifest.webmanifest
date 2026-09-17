@@ -4,8 +4,8 @@
   "description": "Free, open source and customizable QR code generator. 100% client-side.",
   "start_url": ".",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#4f46e5",
+  "background_color": "#FFF8F3",
+  "theme_color": "#241E1B",
   "icons": [
     {
       "src": "favicon.svg",
