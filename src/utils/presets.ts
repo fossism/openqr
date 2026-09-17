@@ -21,10 +21,10 @@ export const DEFAULT_QR_CONFIG: QRDesignConfig = {
     color1: '#241E1B',
     color2: '#16564F',
   },
-  dotStyle: 'rounded',
-  cornerSquareStyle: 'extra-rounded',
+  dotStyle: 'square',
+  cornerSquareStyle: 'square',
   cornerSquareColor: '#241E1B',
-  cornerDotStyle: 'dot',
+  cornerDotStyle: 'square',
   cornerDotColor: '#241E1B',
   logo: {
     src: '',
