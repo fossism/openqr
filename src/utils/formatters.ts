@@ -54,11 +54,12 @@ export const formatVCard = (data: VCardData): string => {
 };
 
 export const formatEmail = (data: EmailData): string => {
+  const email = data.email.trim();
   const params: string[] = [];
   if (data.subject) params.push(`subject=${encodeURIComponent(data.subject)}`);
   if (data.body) params.push(`body=${encodeURIComponent(data.body)}`);
   const query = params.length > 0 ? `?${params.join('&')}` : '';
-  return `mailto:${encodeURIComponent(data.email)}${query}`;
+  return `mailto:${email}${query}`;
 };
 
 export const formatSms = (data: SmsData): string => {
@@ -103,20 +104,55 @@ export const formatEvent = (data: EventData): string => {
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
-  const lines = [
+  const eventLines = [
     'BEGIN:VEVENT',
+    `UID:${Date.now()}@openqr`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
     `SUMMARY:${escapeEventField(data.title)}`,
   ];
   if (data.startDate) {
     const formattedStart = formatDate(data.startDate);
-    if (formattedStart) lines.push(`DTSTART:${formattedStart}`);
+    if (formattedStart) eventLines.push(`DTSTART:${formattedStart}`);
   }
   if (data.endDate) {
     const formattedEnd = formatDate(data.endDate);
-    if (formattedEnd) lines.push(`DTEND:${formattedEnd}`);
+    if (formattedEnd) eventLines.push(`DTEND:${formattedEnd}`);
   }
-  if (data.location) lines.push(`LOCATION:${escapeEventField(data.location)}`);
-  if (data.description) lines.push(`DESCRIPTION:${escapeEventField(data.description)}`);
-  lines.push('END:VEVENT');
-  return lines.join('\n');
+  if (data.location) eventLines.push(`LOCATION:${escapeEventField(data.location)}`);
+  if (data.description) eventLines.push(`DESCRIPTION:${escapeEventField(data.description)}`);
+  eventLines.push('END:VEVENT');
+
+  return ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//OpenQR//EN', ...eventLines, 'END:VCALENDAR'].join('\n');
+};
+
+export const normalizeUrl = (input: string): string => {
+  const trimmed = input.trim();
+  if (!trimmed) return trimmed;
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
+};
+
+export const isValidUrl = (input: string): boolean => {
+  try {
+    const url = new URL(input.includes('://') ? input : `https://${input}`);
+    return url.hostname.includes('.') && url.hostname.length > 3;
+  } catch {
+    return false;
+  }
+};
+
+export type PayloadDensity = 'easy' | 'medium' | 'dense' | 'very-dense';
+
+export const getPayloadDensity = (payload: string): { length: number; level: PayloadDensity; hint: string } => {
+  const length = payload.length;
+  if (length > 2000) {
+    return { length, level: 'very-dense', hint: 'Very dense — may fail on low-end cameras. Shorten content or raise ECC to H.' };
+  }
+  if (length > 800) {
+    return { length, level: 'dense', hint: 'Dense QR — test print size at least 4cm and use ECC Q/H.' };
+  }
+  if (length > 200) {
+    return { length, level: 'medium', hint: 'Medium density — scans reliably.' };
+  }
+  return { length, level: 'easy', hint: 'Compact payload — fast scanning.' };
 };

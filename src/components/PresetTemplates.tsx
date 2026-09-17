@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { PRESET_THEMES } from '../utils/presets';
 import type { PresetTheme, QRDesignConfig } from '../types/qr';
@@ -15,11 +15,28 @@ export const PresetTemplates: React.FC<PresetTemplatesProps> = ({
   onClose,
   onSelectTheme,
 }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn">
-      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Preset aesthetic themes"
+    >
+      <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-slate-800 pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400">
@@ -42,33 +59,35 @@ export const PresetTemplates: React.FC<PresetTemplatesProps> = ({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-h-[60vh] overflow-y-auto pr-1">
           {PRESET_THEMES.map((theme) => (
-            <div
+            <button
               key={theme.id}
+              type="button"
               onClick={() => {
                 onSelectTheme(theme);
                 onClose();
               }}
-              className="group cursor-pointer p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/60 transition-all flex flex-col justify-between"
+              className="group cursor-pointer p-4 rounded-2xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 hover:border-indigo-500/60 transition-all flex flex-col justify-between text-left"
             >
-              <div className="flex items-center gap-3 mb-3">
-                <div
+              <span className="flex items-center gap-3 mb-3">
+                <span
                   className="w-10 h-10 rounded-xl shadow-md flex items-center justify-center shrink-0 border border-white/10"
                   style={{ background: theme.previewGradient }}
+                  aria-hidden="true"
                 />
-                <div>
-                  <h4 className="text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
+                <span>
+                  <span className="block text-sm font-bold text-slate-100 group-hover:text-indigo-300 transition-colors">
                     {theme.name}
-                  </h4>
-                  <p className="text-xs text-slate-400">{theme.description}</p>
-                </div>
-              </div>
+                  </span>
+                  <span className="block text-xs text-slate-400">{theme.description}</span>
+                </span>
+              </span>
 
-              <div className="flex justify-end pt-2">
+              <span className="flex justify-end pt-2">
                 <span className="px-3 py-1 rounded-xl bg-indigo-600/20 text-indigo-300 text-xs font-medium border border-indigo-500/30 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                   Apply Theme
                 </span>
-              </div>
-            </div>
+              </span>
+            </button>
           ))}
         </div>
       </div>

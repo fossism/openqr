@@ -1,3 +1,4 @@
+import QRCodeStyling from 'qr-code-styling';
 import type {
   DotType,
   CornerSquareType,
@@ -6,6 +7,7 @@ import type {
   Options as QRCodeStylingOptions,
 } from 'qr-code-styling';
 import type { QRDesignConfig } from '../types/qr';
+import { DEFAULT_QR_CONFIG } from './presets';
 
 export const mapDotStyle = (style: string): DotType => {
   switch (style) {
@@ -38,7 +40,8 @@ export const mapCornerDotStyle = (style: string): CornerDotType => {
 
 export const createQRCodeOptions = (
   config: QRDesignConfig,
-  data: string
+  data: string,
+  overrides?: Partial<QRCodeStylingOptions>
 ): QRCodeStylingOptions => {
   const options: QRCodeStylingOptions = {
     width: config.width,
@@ -74,6 +77,7 @@ export const createQRCodeOptions = (
       type: mapCornerDotStyle(config.cornerDotStyle),
       color: config.cornerDotColor || config.foregroundColor,
     },
+    ...overrides,
   };
 
   if (config.logo.src) {
@@ -89,13 +93,39 @@ export const createQRCodeOptions = (
   return options;
 };
 
+const roundRectPath = (
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) => {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+};
+
 /**
- * Draws frame badge overlay around canvas if frame is enabled
+ * Draws frame overlay around a rendered QR canvas.
+ * - badge-top / badge-bottom: colored card + CTA text
+ * - card-rounded: minimal rounded card, no badge text
+ * - ticket: badge-bottom with perforated side notches + dashed divider
+ * Transparent QRs get an opaque white inner panel when framed so they stay scannable.
  */
 export const drawFrameOnCanvas = (
   rawCanvas: HTMLCanvasElement,
   frameConfig: QRDesignConfig['frame'],
-  bgColor: string = '#ffffff'
+  bgColor: string = '#ffffff',
+  transparentBackground = false
 ): HTMLCanvasElement => {
   if (frameConfig.style === 'none') {
     return rawCanvas;
@@ -104,7 +134,8 @@ export const drawFrameOnCanvas = (
   const qrWidth = rawCanvas.width;
   const qrHeight = rawCanvas.height;
   const framePadding = 24;
-  const badgeHeight = 44;
+  const hasBadge = frameConfig.style === 'badge-top' || frameConfig.style === 'badge-bottom' || frameConfig.style === 'ticket';
+  const badgeHeight = hasBadge ? 48 : 0;
 
   const totalWidth = qrWidth + framePadding * 2;
   const totalHeight = qrHeight + framePadding * 2 + badgeHeight;
@@ -115,54 +146,195 @@ export const drawFrameOnCanvas = (
   const ctx = framedCanvas.getContext('2d');
   if (!ctx) return rawCanvas;
 
-  // Background card with rounded corners
-  const radius = 16;
+  // Outer card
+  const radius = frameConfig.style === 'card-rounded' ? 24 : 16;
   ctx.fillStyle = frameConfig.backgroundColor || '#4f46e5';
-  ctx.beginPath();
-  ctx.moveTo(radius, 0);
-  ctx.lineTo(totalWidth - radius, 0);
-  ctx.quadraticCurveTo(totalWidth, 0, totalWidth, radius);
-  ctx.lineTo(totalWidth, totalHeight - radius);
-  ctx.quadraticCurveTo(totalWidth, totalHeight, totalWidth - radius, totalHeight);
-  ctx.lineTo(radius, totalHeight);
-  ctx.quadraticCurveTo(0, totalHeight, 0, totalHeight - radius);
-  ctx.lineTo(0, radius);
-  ctx.quadraticCurveTo(0, 0, radius, 0);
-  ctx.closePath();
+  roundRectPath(ctx, 0, 0, totalWidth, totalHeight, radius);
   ctx.fill();
 
-  // Border line
-  ctx.lineWidth = 4;
+  ctx.lineWidth = 3;
   ctx.strokeStyle = frameConfig.borderColor || '#3730a3';
+  roundRectPath(ctx, 2, 2, totalWidth - 4, totalHeight - 4, Math.max(radius - 2, 4));
   ctx.stroke();
 
-  // Draw inner white container for QR code
+  // Inner QR panel — always opaque when framed for scannability
   const innerMargin = 12;
-  const innerX = innerMargin;
   const isTopBadge = frameConfig.style === 'badge-top';
-  const innerY = isTopBadge ? badgeHeight + innerMargin : innerMargin;
+  const innerY = isTopBadge && hasBadge ? badgeHeight + innerMargin : innerMargin;
+  const innerH = qrHeight + framePadding;
+  const opaqueInner = transparentBackground ? '#ffffff' : bgColor;
 
-  ctx.fillStyle = bgColor === 'transparent' ? '#ffffff' : bgColor;
-  ctx.beginPath();
-  ctx.roundRect(innerX, innerY, totalWidth - innerMargin * 2, qrHeight + framePadding, 12);
-  ctx.fill();
+  ctx.fillStyle = opaqueInner;
+  if (typeof (ctx as unknown as { roundRect?: unknown }).roundRect === 'function') {
+    ctx.beginPath();
+    (ctx as unknown as { roundRect: (x: number, y: number, w: number, h: number, r: number) => void }).roundRect(
+      innerMargin, innerY, totalWidth - innerMargin * 2, innerH, 12
+    );
+    ctx.fill();
+  } else {
+    roundRectPath(ctx, innerMargin, innerY, totalWidth - innerMargin * 2, innerH, 12);
+    ctx.fill();
+  }
 
-  // Draw QR canvas image inside
   const qrX = framePadding;
-  const qrY = isTopBadge ? badgeHeight + framePadding / 2 + innerMargin : framePadding;
+  const qrY = isTopBadge && hasBadge ? badgeHeight + framePadding / 2 + innerMargin : framePadding;
   ctx.drawImage(rawCanvas, qrX, qrY);
 
-  // Draw Badge Text
-  ctx.fillStyle = frameConfig.textColor || '#ffffff';
-  ctx.font = `bold ${frameConfig.fontSize || 16}px Inter, system-ui, sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  if (hasBadge) {
+    // Ticket divider + notches
+    if (frameConfig.style === 'ticket') {
+      const dividerY = totalHeight - badgeHeight - 6;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.moveTo(16, dividerY);
+      ctx.lineTo(totalWidth - 16, dividerY);
+      ctx.stroke();
+      ctx.setLineDash([]);
 
-  const textY = isTopBadge 
-    ? (badgeHeight + innerMargin) / 2 
-    : totalHeight - badgeHeight / 2 - 4;
+      // Side cutouts to suggest a ticket stub (leave border gap open)
+      ctx.fillStyle = '#000000';
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.beginPath();
+      ctx.arc(0, dividerY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(totalWidth, dividerY, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = 'source-over';
+    }
 
-  ctx.fillText(frameConfig.text.toUpperCase(), totalWidth / 2, textY);
+    ctx.fillStyle = frameConfig.textColor || '#ffffff';
+    const fontSize = Math.min(Math.max(frameConfig.fontSize || 15, 10), 28);
+    ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    const label = (frameConfig.text || 'SCAN ME').toUpperCase().slice(0, 42);
+    const textY = isTopBadge ? (badgeHeight + innerMargin) / 2 : totalHeight - badgeHeight / 2 - 2;
+    ctx.fillText(label, totalWidth / 2, textY);
+  }
 
   return framedCanvas;
+};
+
+/** Wait for qr-code-styling to finish painting a canvas inside a temp node. */
+const waitForCanvas = async (root: HTMLElement, timeoutMs = 1200): Promise<HTMLCanvasElement | null> => {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const canvas = root.querySelector('canvas');
+    if (canvas && canvas.width > 0) {
+      // Give the lib one extra frame to finish image/logo compositing
+      await new Promise((r) => setTimeout(r, 120));
+      return root.querySelector('canvas');
+    }
+    await new Promise((r) => setTimeout(r, 60));
+  }
+  return root.querySelector('canvas');
+};
+
+/**
+ * Render a QR at an exact export size (e.g. 512/1024/2048/4096), including frame compositing.
+ */
+export const renderQRCanvasAtSize = async (
+  config: QRDesignConfig,
+  payload: string,
+  size: number
+): Promise<HTMLCanvasElement | null> => {
+  const exportConfig: QRDesignConfig = {
+    ...config,
+    width: size,
+    height: size,
+  };
+  const options = createQRCodeOptions(exportConfig, payload);
+  const qr = new QRCodeStyling(options);
+  const holder = document.createElement('div');
+  holder.style.position = 'fixed';
+  holder.style.left = '-9999px';
+  holder.style.top = '0';
+  document.body.appendChild(holder);
+  try {
+    qr.append(holder);
+    const raw = await waitForCanvas(holder);
+    if (!raw) return null;
+    return drawFrameOnCanvas(raw, config.frame, config.backgroundColor, config.transparentBackground);
+  } finally {
+    if (document.body.contains(holder)) document.body.removeChild(holder);
+  }
+};
+
+/** Render a frameless vector SVG blob for the current QR design. */
+export const renderQRSvgBlob = async (
+  config: QRDesignConfig,
+  payload: string
+): Promise<Blob | null> => {
+  const options = createQRCodeOptions(config, payload, { type: 'svg', width: 1024, height: 1024 });
+  const qr = new QRCodeStyling(options);
+  try {
+    const raw = await qr.getRawData('svg');
+    if (!raw) return null;
+    if (raw instanceof Blob) return raw;
+    return new Blob([raw as unknown as BlobPart], { type: 'image/svg+xml' });
+  } catch {
+    return null;
+  }
+};
+
+/** Deep-merge a saved config over defaults so nested gradient/logo/frame survive upgrades. */
+export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig => {
+  return {
+    ...DEFAULT_QR_CONFIG,
+    ...saved,
+    gradient: { ...DEFAULT_QR_CONFIG.gradient, ...(saved.gradient ?? {}) },
+    logo: { ...DEFAULT_QR_CONFIG.logo, ...(saved.logo ?? {}) },
+    frame: { ...DEFAULT_QR_CONFIG.frame, ...(saved.frame ?? {}) },
+  };
+};
+
+/**
+ * Bake a logo background (white circle/square) into the image itself so
+ * qr-code-styling — which has no native logo-background option — still shows one.
+ */
+export const bakeLogoWithBackground = (
+  src: string,
+  backgroundType: QRDesignConfig['logo']['backgroundType'],
+  backgroundColor: string
+): Promise<string> => {
+  if (!src || backgroundType === 'none') return Promise.resolve(src);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const pad = 24;
+        const size = Math.max(img.naturalWidth, img.naturalHeight) + pad * 2;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return resolve(src);
+        ctx.fillStyle = backgroundColor || '#ffffff';
+        const cx = size / 2;
+        const cy = size / 2;
+        const r = size / 2 - 4;
+        if (backgroundType === 'white-circle' || backgroundType === 'custom-circle') {
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          const rad = 28;
+          roundRectPath(ctx, 4, 4, size - 8, size - 8, rad);
+          ctx.fill();
+        }
+        const dx = (size - img.naturalWidth) / 2;
+        const dy = (size - img.naturalHeight) / 2;
+        ctx.drawImage(img, dx, dy, img.naturalWidth, img.naturalHeight);
+        resolve(canvas.toDataURL('image/png'));
+      } catch {
+        resolve(src);
+      }
+    };
+    img.onerror = () => resolve(src);
+    img.src = src;
+  });
 };

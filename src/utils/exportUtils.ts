@@ -34,7 +34,8 @@ export const exportCanvasImage = (
 ) => {
   if (!canvas) return;
   const mimeType = `image/${format}`;
-  const dataUrl = canvas.toDataURL(mimeType, 1.0);
+  // toDataURL quality is ignored for PNG; only used for lossy formats
+  const dataUrl = format === 'png' ? canvas.toDataURL('image/png') : canvas.toDataURL(mimeType, 0.92);
   const safeName = sanitizeFilename(filename, 'openqr-code');
   
   const link = document.createElement('a');
@@ -116,4 +117,31 @@ export const exportPdfDocument = (
   const safeName = sanitizeFilename(filename, 'openqr-document');
   pdf.save(`${safeName}.pdf`);
   triggerConfetti();
+};
+
+export const copyCanvasToClipboard = async (canvas: HTMLCanvasElement): Promise<boolean> => {
+  try {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+    if (!blob) return false;
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export const downloadSvgBlob = (blob: Blob, filename: string) => {
+  const safeName = sanitizeFilename(filename, 'openqr-vector');
+  saveAs(blob, `${safeName}.svg`);
+  triggerConfetti();
+};
+
+export const exportConfigJson = (config: unknown, filename = 'openqr-theme') => {
+  const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+  saveAs(blob, `${sanitizeFilename(filename, 'openqr-theme')}.json`);
+};
+
+export const parseConfigJson = async (file: File): Promise<unknown> => {
+  const text = await file.text();
+  return JSON.parse(text);
 };

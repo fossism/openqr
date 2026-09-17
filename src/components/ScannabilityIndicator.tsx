@@ -16,7 +16,7 @@ export const ScannabilityIndicator: React.FC<ScannabilityIndicatorProps> = ({
       <div className="p-3 rounded-xl bg-slate-800/80 border border-slate-700/80 flex items-center justify-between text-xs text-slate-400 animate-pulse">
         <span className="flex items-center gap-2">
           <RefreshCw className="w-3.5 h-3.5 animate-spin text-indigo-400" />
-          Verifying scannability with AI decoder engine...
+          Verifying scannability with live decoder...
         </span>
       </div>
     );
@@ -32,7 +32,7 @@ export const ScannabilityIndicator: React.FC<ScannabilityIndicatorProps> = ({
           <div className="flex items-center justify-between">
             <h4 className="text-xs font-bold text-emerald-300 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-              100% Verified & Scannable
+              Verified & Scannable
             </h4>
             <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
               Score: {result.matchScore}%

@@ -9,6 +9,29 @@ export interface ScanVerificationResult {
 }
 
 /**
+ * WCAG-style contrast ratio between two hex colors (1 to 21).
+ */
+export const getContrastRatio = (hex1: string, hex2: string): number => {
+  const lum = (hex: string): number => {
+    const c = hex.replace('#', '');
+    const full = c.length === 3 ? c.split('').map((ch) => ch + ch).join('') : c;
+    const r = parseInt(full.slice(0, 2), 16) / 255;
+    const g = parseInt(full.slice(2, 4), 16) / 255;
+    const b = parseInt(full.slice(4, 6), 16) / 255;
+    const f = (v: number) => (v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4));
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b);
+  };
+  try {
+    const l1 = lum(hex1);
+    const l2 = lum(hex2);
+    const [lighter, darker] = l1 > l2 ? [l1, l2] : [l2, l1];
+    return (lighter + 0.05) / (darker + 0.05);
+  } catch {
+    return 1;
+  }
+};
+
+/**
  * Validates whether a rendered canvas containing a QR code is scannable
  * and matches the expected payload text.
  */
@@ -52,7 +75,7 @@ export const verifyQRScannability = (
 
     const imageData = ctx.getImageData(0, 0, width, height);
     const qrCode = jsQR(imageData.data, width, height, {
-      inversionAttempts: 'dontInvert',
+      inversionAttempts: 'attemptBoth',
     });
 
     if (!qrCode) {
@@ -60,7 +83,7 @@ export const verifyQRScannability = (
         isScannable: false,
         decodedText: null,
         status: 'failed',
-        message: 'QR code unreadable by scanner. Try increasing Error Correction (H) or reducing logo size.',
+        message: 'QR code unreadable. Raise ECC to H, reduce logo size, or improve foreground/background contrast.',
         matchScore: 0,
       };
     }
@@ -73,7 +96,7 @@ export const verifyQRScannability = (
         isScannable: true,
         decodedText: decoded,
         status: 'verified',
-        message: '100% Scannable & Verified by AI Engine',
+        message: 'Scannable and verified against live decoder',
         matchScore: 100,
       };
     } else {

@@ -1,18 +1,22 @@
 import React from 'react';
-import { Square, Circle, Sparkles } from 'lucide-react';
+import { Square, Circle, Sparkles, Maximize2 } from 'lucide-react';
 import type { DotStyle, CornerSquareStyle, CornerDotStyle } from '../../types/qr';
 
 interface StylePickerProps {
   dotStyle: DotStyle;
   cornerSquareStyle: CornerSquareStyle;
   cornerDotStyle: CornerDotStyle;
-  onChange: (key: string, value: any) => void;
+  canvasSize: number;
+  margin: number;
+  onChange: (key: string, value: string | number) => void;
 }
 
 export const StylePicker: React.FC<StylePickerProps> = ({
   dotStyle,
   cornerSquareStyle,
   cornerDotStyle,
+  canvasSize,
+  margin,
   onChange,
 }) => {
   const dotStyles: { id: DotStyle; label: string }[] = [
@@ -100,6 +104,49 @@ export const StylePicker: React.FC<StylePickerProps> = ({
               {item.label}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="border-t border-slate-800 pt-4 space-y-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+          <Maximize2 className="w-3.5 h-3.5 text-indigo-400" /> Canvas & Quiet Zone
+        </p>
+        <div>
+          <div className="flex justify-between text-xs text-slate-400 mb-1">
+            <span>Preview size</span>
+            <span className="font-mono text-indigo-300">{canvasSize} px</span>
+          </div>
+          <input
+            type="range"
+            min={256}
+            max={800}
+            step={8}
+            value={canvasSize}
+            onChange={(e) => {
+              const v = parseInt(e.target.value, 10);
+              onChange('width', v);
+              onChange('height', v);
+            }}
+            className="w-full accent-indigo-500"
+            aria-label="QR preview size"
+          />
+          <p className="text-[11px] text-slate-500 mt-1">Preview only. Final export uses Export resolution.</p>
+        </div>
+        <div>
+          <div className="flex justify-between text-xs text-slate-400 mb-1">
+            <span>Quiet-zone margin</span>
+            <span className="font-mono text-indigo-300">{margin}px</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={40}
+            value={margin}
+            onChange={(e) => onChange('margin', parseInt(e.target.value, 10))}
+            className="w-full accent-indigo-500"
+            aria-label="QR quiet zone margin"
+          />
+          <p className="text-[11px] text-slate-500 mt-1">Keep at least 10px for reliable scanning.</p>
         </div>
       </div>
     </div>

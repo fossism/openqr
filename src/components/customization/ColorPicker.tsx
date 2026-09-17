@@ -1,6 +1,7 @@
 import React from 'react';
-import { Palette, Eye, RotateCw } from 'lucide-react';
+import { Palette, Eye, RotateCw, AlertTriangle } from 'lucide-react';
 import type { QRDesignConfig, GradientOptions } from '../../types/qr';
+import { getContrastRatio } from '../../utils/qrScanner';
 
 interface ColorPickerProps {
   config: QRDesignConfig;
@@ -8,9 +9,14 @@ interface ColorPickerProps {
 }
 
 export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) => {
-  const updateGradient = (key: keyof GradientOptions, val: any) => {
+  const updateGradient = (key: keyof GradientOptions, val: string | number) => {
     onChange('gradient', { ...config.gradient, [key]: val });
   };
+
+  const contrast = config.transparentBackground
+    ? null
+    : getContrastRatio(config.foregroundColor, config.backgroundColor);
+  const lowContrast = contrast !== null && contrast < 3;
 
   return (
     <div className="space-y-5">
@@ -199,6 +205,28 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) =>
           </div>
         </div>
       </div>
+
+      {contrast !== null && (
+        <div
+          className={`p-3 rounded-xl border flex items-start gap-2.5 text-xs ${
+            lowContrast
+              ? 'bg-amber-500/10 border-amber-500/30 text-amber-200'
+              : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-200'
+          }`}
+        >
+          {!lowContrast ? (
+            <Eye className="w-4 h-4 shrink-0 mt-0.5" />
+          ) : (
+            <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          )}
+          <p>
+            Contrast {contrast.toFixed(2)}:1 —{' '}
+            {lowContrast
+              ? 'below 3:1. Scanners may fail. Darken modules or lighten background.'
+              : 'good for scanning.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 };

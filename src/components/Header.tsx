@@ -49,11 +49,12 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) =>
           </button>
 
           <a
-            href="https://github.com"
+            href="https://github.com/fossism/openqr"
             target="_blank"
             rel="noreferrer"
             className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition-colors"
             title="OpenQR Open Source Code"
+            aria-label="OpenQR GitHub repository"
           >
             <Code className="w-4 h-4" />
           </a>
