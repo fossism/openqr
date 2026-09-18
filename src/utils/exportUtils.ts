@@ -88,7 +88,6 @@ export const exportPdfDocument = (
   const pageWidth = 210;
   const qrSize = 120;
   const x = (pageWidth - qrSize) / 2;
-  const y = 50;
 
   // Brand header: teal on cream
   pdf.setFillColor(255, 248, 243); // #FFF8F3
@@ -100,12 +99,17 @@ export const exportPdfDocument = (
   pdf.setFont('helvetica', 'bold');
   pdf.setFontSize(22);
   pdf.setTextColor(22, 86, 79); // teal
-  pdf.text('OPEN QR CODE', pageWidth / 2, 36, { align: 'center' });
+  pdf.text('OPEN QR CODE', pageWidth / 2, 26, { align: 'center' });
 
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(14);
   pdf.setTextColor(22, 86, 79);
-  pdf.text(titleText, pageWidth / 2, 44, { align: 'center' });
+  const titleLines = pdf.splitTextToSize(titleText.slice(0, 140), 170) as string[];
+  const titleStartY = 36;
+  pdf.text(titleLines, pageWidth / 2, titleStartY, { align: 'center' });
+
+  // QR position shifts down with wrapped title lines so nothing overlaps
+  const y = titleStartY + titleLines.length * 7 + 8;
 
   // Draw QR Image
   pdf.addImage(imgData, 'PNG', x, y, qrSize, qrSize);

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, Layers, Download, FileSpreadsheet, RefreshCw, Eye } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -6,6 +6,7 @@ import QRCodeStyling from 'qr-code-styling';
 import type { QRDesignConfig, BatchItem } from '../types/qr';
 import { createQRCodeOptions, drawFrameOnCanvas } from '../utils/qrGenerator';
 import { triggerConfetti, sanitizeFilename } from '../utils/exportUtils';
+import { useModalBehavior } from '../hooks/useModalBehavior';
 
 interface BatchGeneratorProps {
   isOpen: boolean;
@@ -51,15 +52,16 @@ https://openqr.io/table-3, Table 3`
   const [progress, setProgress] = useState<number>(0);
   const [batchItems, setBatchItems] = useState<BatchItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const cancelRef = useRef(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  const requestClose = () => {
+    // Aborts an in-flight batch so closing mid-run stops work immediately.
+    cancelRef.current = true;
+    onClose();
+  };
+
+  useModalBehavior(isOpen, dialogRef, requestClose);
 
   if (!isOpen) return null;
 
@@ -86,6 +88,7 @@ https://openqr.io/table-3, Table 3`
     const total = valid.length;
     setIsProcessing(true);
     setProgress(0);
+    cancelRef.current = false;
 
     const zip = new JSZip();
     const folder = zip.folder('openqr_batch_codes');
@@ -93,6 +96,7 @@ https://openqr.io/table-3, Table 3`
     const filenameCountMap: Record<string, number> = {};
 
     for (let i = 0; i < total; i++) {
+      if (cancelRef.current) break;
       const item = valid[i];
       let tempDiv: HTMLDivElement | null = null;
       try {
@@ -148,6 +152,11 @@ https://openqr.io/table-3, Table 3`
       setProgress(Math.round(((i + 1) / total) * 100));
     }
 
+    if (cancelRef.current) {
+      setIsProcessing(false);
+      return;
+    }
+
     try {
       const content = await zip.generateAsync({ type: 'blob' });
       saveAs(content, 'openqr_batch_package.zip');
@@ -162,22 +171,22 @@ https://openqr.io/table-3, Table 3`
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FFF8F3] backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#241E1B]/60 backdrop-blur-md animate-fadeIn"
       onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
+        if (e.target === e.currentTarget) requestClose();
       }}
       role="dialog"
       aria-modal="true"
       aria-label="Batch QR generator"
     >
-      <div className="relative w-full max-w-2xl bg-[#FFF8F3] border border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-5 max-h-[90vh] overflow-y-auto">
+      <div ref={dialogRef} className="relative w-full max-w-2xl bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-5 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-[#241E1B] pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-none bg-[#241E1B]/5 text-[#241E1B]">
               <Layers className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[#FFF8F3]">Batch QR Generator</h3>
+              <h3 className="text-lg font-bold text-[#241E1B]">Batch QR Generator</h3>
               <p className="text-xs text-[#241E1B]/70">
                 Bulk generate multiple QR codes and export all as a ZIP archive
               </p>
@@ -185,9 +194,9 @@ https://openqr.io/table-3, Table 3`
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={requestClose}
             aria-label="Close batch modal"
-            className="p-2 rounded-none bg-[#FFF8F3] text-[#241E1B]/70 hover:text-[#FFF8F3] transition-colors"
+            className="p-2 rounded-none bg-[#FFF8F3] text-[#241E1B]/70 hover:bg-[#241E1B] hover:text-[#FFF8F3] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -237,7 +246,7 @@ https://openqr.io/table-3, Table 3`
                     <span
                       className={`px-2 py-0.5 rounded-none text-[10px] font-bold ${
                         item.status === 'ready'
-                          ? 'bg-[#E8B84B] text-[#241E1B]'
+                          ? 'bg-[#16564F] text-[#FFF8F3]'
                           : item.status === 'error'
                             ? 'bg-[#241E1B]/5 text-[#241E1B]'
                             : 'bg-[#241E1B]/5 text-[#241E1B]'
@@ -282,10 +291,10 @@ https://openqr.io/table-3, Table 3`
         <div className="flex items-center justify-end gap-3 border-t border-[#241E1B] pt-4">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] text-[#241E1B] text-xs font-medium transition-colors"
+            onClick={requestClose}
+            className="px-4 py-2.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] text-[#241E1B] text-xs font-medium transition-colors border border-[#241E1B]"
           >
-            Cancel
+            {isProcessing ? 'Cancel run' : 'Cancel'}
           </button>
 
           <button

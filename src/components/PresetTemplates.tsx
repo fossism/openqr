@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useRef } from 'react';
 import { X, Sparkles } from 'lucide-react';
 import { PRESET_THEMES } from '../utils/presets';
 import type { PresetTheme, QRDesignConfig } from '../types/qr';
+import { useModalBehavior } from '../hooks/useModalBehavior';
 
 interface PresetTemplatesProps {
   isOpen: boolean;
@@ -15,20 +16,14 @@ export const PresetTemplates: React.FC<PresetTemplatesProps> = ({
   onClose,
   onSelectTheme,
 }) => {
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [isOpen, onClose]);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useModalBehavior(isOpen, dialogRef, onClose);
 
   if (!isOpen) return null;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#FFF8F3] backdrop-blur-md animate-fadeIn"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#241E1B]/60 backdrop-blur-md animate-fadeIn"
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
@@ -36,14 +31,14 @@ export const PresetTemplates: React.FC<PresetTemplatesProps> = ({
       aria-modal="true"
       aria-label="Preset aesthetic themes"
     >
-      <div className="relative w-full max-w-2xl bg-[#FFF8F3] border border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-6 max-h-[90vh] overflow-y-auto">
+      <div ref={dialogRef} className="relative w-full max-w-2xl bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-[#241E1B] pb-4">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-none bg-[#241E1B]/5 text-[#241E1B]">
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-[#FFF8F3]">Preset Aesthetic Themes</h3>
+              <h3 className="text-lg font-bold text-[#241E1B]">Preset Aesthetic Themes</h3>
               <p className="text-xs text-[#241E1B]/70">Select a curated theme to transform your QR code design</p>
             </div>
           </div>
@@ -51,7 +46,7 @@ export const PresetTemplates: React.FC<PresetTemplatesProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="p-2 rounded-none bg-[#FFF8F3] text-[#241E1B]/70 hover:text-[#FFF8F3] transition-colors"
+            className="p-2 rounded-none bg-[#FFF8F3] text-[#241E1B]/70 hover:bg-[#241E1B] hover:text-[#FFF8F3] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
