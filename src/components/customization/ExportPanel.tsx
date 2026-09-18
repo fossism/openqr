@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Download, FileCode, FileText, Image as ImageIcon, Copy, Check, FileJson, Upload, Link2, Loader2 } from 'lucide-react';
+import { Download, FileCode, FileText, Image as ImageIcon, Copy, Check, FileJson, Upload, Link2, Loader2, Layers } from 'lucide-react';
 import {
   exportCanvasImage,
   exportPdfDocument,
@@ -19,6 +19,7 @@ interface ExportPanelProps {
   config: QRDesignConfig;
   payloadText: string;
   onImportConfig: (config: QRDesignConfig) => void;
+  onOpenBatch: () => void;
 }
 
 export const ExportPanel: React.FC<ExportPanelProps> = ({
@@ -28,6 +29,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
   config,
   payloadText,
   onImportConfig,
+  onOpenBatch,
 }) => {
   const [resolution, setResolution] = useState<number>(1024);
   const [filename, setFilename] = useState<string>('openqr-code');
@@ -257,6 +259,23 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           Load theme
         </button>
         <input ref={fileInputRef} type="file" accept="application/json,.json" onChange={handleImportFile} className="hidden" />
+      </div>
+
+      <div className="p-4 rounded-none bg-[#FFF8F3] border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B] flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Layers className="w-4 h-4 text-[#241E1B]" />
+          <div>
+            <p className="text-xs font-bold text-[#241E1B]">Need many codes at once?</p>
+            <p className="text-[11px] text-[#241E1B]/60">Bulk-generate a labeled set as ZIP.</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onOpenBatch}
+          className="px-3.5 py-2 rounded-none bg-[#241E1B] hover:bg-[#16564F] text-[#FFF8F3] text-xs font-bold border-2 border-[#241E1B] transition-colors shrink-0"
+        >
+          Batch mode
+        </button>
       </div>
 
       {notice && (

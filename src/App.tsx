@@ -57,6 +57,7 @@ import { FramePicker } from './components/customization/FramePicker';
 import { ExportPanel } from './components/customization/ExportPanel';
 import { PresetTemplates } from './components/PresetTemplates';
 import { BatchGenerator } from './components/BatchGenerator';
+import { DecodeQR } from './components/DecodeQR';
 
 import { UrlForm } from './components/contentForms/UrlForm';
 import { WifiForm } from './components/contentForms/WifiForm';
@@ -199,6 +200,7 @@ export function App() {
   // Modal Dialog States
   const [showPresetsModal, setShowPresetsModal] = useState<boolean>(false);
   const [showBatchModal, setShowBatchModal] = useState<boolean>(false);
+  const [showScanModal, setShowScanModal] = useState<boolean>(false);
 
   // Ref to QRPreview instance
   const previewRef = useRef<QRPreviewHandle>(null);
@@ -298,6 +300,18 @@ export function App() {
     setConfig(DEFAULT_QR_CONFIG);
   };
 
+  const handleUseDecodedPayload = (text: string) => {
+    const trimmed = text.trim();
+    if (/^https?:\/\/\S+$/i.test(trimmed) && trimmed.length < 500) {
+      setUrlInput(trimmed);
+      setActiveContentType('url');
+    } else {
+      setRawText(text);
+      setActiveContentType('text');
+    }
+    setActiveCustomTab('content');
+  };
+
   const restoreHistoryEntry = (entry: HistoryEntry) => {
     setActiveContentType(entry.contentType);
     setUrlInput(entry.urlInput);
@@ -322,7 +336,7 @@ export function App() {
       {/* Header */}
       <Header
         onOpenPresets={() => setShowPresetsModal(true)}
-        onOpenBatch={() => setShowBatchModal(true)}
+        onOpenScan={() => setShowScanModal(true)}
       />
 
       {/* Main Workspace Layout */}
@@ -474,6 +488,7 @@ export function App() {
                   config={config}
                   payloadText={payloadText}
                   onImportConfig={setConfig}
+                  onOpenBatch={() => setShowBatchModal(true)}
                 />
               )}
             </div>
@@ -565,6 +580,12 @@ export function App() {
         isOpen={showBatchModal}
         onClose={() => setShowBatchModal(false)}
         config={config}
+      />
+
+      <DecodeQR
+        isOpen={showScanModal}
+        onClose={() => setShowScanModal(false)}
+        onUsePayload={handleUseDecodedPayload}
       />
 
       {/* Footer */}

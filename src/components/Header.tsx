@@ -1,12 +1,12 @@
 import React from 'react';
-import { QrCode, Layers, Palette, ShieldCheck } from 'lucide-react';
+import { QrCode, ScanLine, Palette, ShieldCheck } from 'lucide-react';
 
 interface HeaderProps {
   onOpenPresets: () => void;
-  onOpenBatch: () => void;
+  onOpenScan: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) => {
+export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenScan }) => {
   return (
     <header className="sticky top-0 z-40 w-full border-b-4 border-[#E8B84B] bg-[#241E1B]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -41,11 +41,11 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenBatch }) =>
 
           <button
             type="button"
-            onClick={onOpenBatch}
+            onClick={onOpenScan}
             className="flex items-center gap-1.5 px-3 py-2 bg-[#E8B84B] hover:bg-[#FFF8F3] text-[#241E1B] border-2 border-[#FFF8F3] text-xs font-bold transition-all"
           >
-            <Layers className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Batch Generator</span>
+            <ScanLine className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Scan QR</span>
           </button>
 
           <a
