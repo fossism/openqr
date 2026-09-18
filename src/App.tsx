@@ -572,7 +572,7 @@ export function App() {
       {/* Footer */}
       <footer className="mt-auto border-t-4 border-[#E8B84B] py-6 bg-[#241E1B] text-center text-xs text-[#FFF8F3]">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} OpenQR — Privacy-First Open Source QR Code Generator</p>
+          <p>© {new Date().getFullYear()} OpenQR: Privacy-First Open Source QR Code Generator</p>
           <div className="flex items-center gap-4">
             <span className="text-[#E8B84B] font-bold">● 100% Client-Side Engine</span>
             <span>No Login Required</span>

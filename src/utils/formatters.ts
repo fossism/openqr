@@ -146,13 +146,13 @@ export type PayloadDensity = 'easy' | 'medium' | 'dense' | 'very-dense';
 export const getPayloadDensity = (payload: string): { length: number; level: PayloadDensity; hint: string } => {
   const length = payload.length;
   if (length > 2000) {
-    return { length, level: 'very-dense', hint: 'Very dense — may fail on low-end cameras. Shorten content or raise ECC to H.' };
+    return { length, level: 'very-dense', hint: 'Very dense: may fail on low-end cameras. Shorten content or raise ECC to H.' };
   }
   if (length > 800) {
-    return { length, level: 'dense', hint: 'Dense QR — test print size at least 4cm and use ECC Q/H.' };
+    return { length, level: 'dense', hint: 'Dense QR: test print size at least 4cm and use ECC Q/H.' };
   }
   if (length > 200) {
-    return { length, level: 'medium', hint: 'Medium density — scans reliably.' };
+    return { length, level: 'medium', hint: 'Medium density: scans reliably.' };
   }
-  return { length, level: 'easy', hint: 'Compact payload — fast scanning.' };
+  return { length, level: 'easy', hint: 'Compact payload: fast scanning.' };
 };

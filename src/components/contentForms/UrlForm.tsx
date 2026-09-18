@@ -37,13 +37,13 @@ export const UrlForm: React.FC<UrlFormProps> = ({ value, onChange }) => {
             className="mt-2 flex items-center gap-1.5 text-xs text-[#241E1B] bg-[#241E1B]/5 border border-[#241E1B] rounded-none px-3 py-2 hover:bg-[#241E1B]/5 transition-colors"
           >
             <AlertTriangle className="w-3.5 h-3.5" />
-            Missing https:// — click to fix to https://{trimmed}
+            Missing https://: click to fix to https://{trimmed}
           </button>
         )}
         {trimmed && hasScheme && (
           <p className={`mt-2 flex items-center gap-1.5 text-xs ${valid ? 'text-[#241E1B]' : 'text-[#241E1B]'}`}>
             {valid ? <Check className="w-3.5 h-3.5" /> : <AlertTriangle className="w-3.5 h-3.5" />}
-            {valid ? 'URL looks valid.' : 'This URL looks incomplete — check the domain.'}
+            {valid ? 'URL looks valid.' : 'This URL looks incomplete: check the domain.'}
           </p>
         )}
       </div>

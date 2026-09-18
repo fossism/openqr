@@ -90,7 +90,7 @@ export const exportPdfDocument = (
   const x = (pageWidth - qrSize) / 2;
   const y = 50;
 
-  // Brand header — teal on cream
+  // Brand header: teal on cream
   pdf.setFillColor(255, 248, 243); // #FFF8F3
   pdf.rect(0, 0, 210, 297, 'F');
   pdf.setFillColor(22, 86, 79); // #16564F
@@ -110,7 +110,7 @@ export const exportPdfDocument = (
   // Draw QR Image
   pdf.addImage(imgData, 'PNG', x, y, qrSize, qrSize);
 
-  // Border frame around QR on PDF — teal sharp
+  // Border frame around QR on PDF: teal sharp
   pdf.setDrawColor(22, 86, 79);
   pdf.setLineWidth(1.2);
   pdf.rect(x - 5, y - 5, qrSize + 10, qrSize + 10);
@@ -118,7 +118,7 @@ export const exportPdfDocument = (
   // Footer note
   pdf.setFontSize(10);
   pdf.setTextColor(22, 86, 79);
-  pdf.text('Generated using OpenQR — Privacy-First Open Source QR Generator', pageWidth / 2, y + qrSize + 25, { align: 'center' });
+  pdf.text('Generated using OpenQR: Privacy-First Open Source QR Generator', pageWidth / 2, y + qrSize + 25, { align: 'center' });
 
   const safeName = sanitizeFilename(filename, 'openqr-document');
   pdf.save(`${safeName}.pdf`);

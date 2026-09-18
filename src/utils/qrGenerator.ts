@@ -94,7 +94,7 @@ export const createQRCodeOptions = (
 };
 
 /**
- * Draws frame overlay around a rendered QR canvas — sharp rectangles only (brand).
+ * Draws frame overlay around a rendered QR canvas: sharp rectangles only (brand).
  * - badge-top / badge-bottom: colored card + CTA text
  * - card-rounded: minimal sharp card, no badge text (kept sharp per branding)
  * - ticket: badge-bottom with perforated side notches + dashed divider
@@ -125,7 +125,7 @@ export const drawFrameOnCanvas = (
   const ctx = framedCanvas.getContext('2d');
   if (!ctx) return rawCanvas;
 
-  // Outer card — sharp rectangle, brand teal default
+  // Outer card: sharp rectangle, brand teal default
   ctx.fillStyle = frameConfig.backgroundColor || '#241E1B';
   ctx.fillRect(0, 0, totalWidth, totalHeight);
 
@@ -137,7 +137,7 @@ export const drawFrameOnCanvas = (
   ctx.fillStyle = '#E8B84B';
   ctx.fillRect(0, 0, totalWidth, 6);
 
-  // Inner QR panel — always opaque when framed for scannability
+  // Inner QR panel: always opaque when framed for scannability
   const innerMargin = 12;
   const isTopBadge = frameConfig.style === 'badge-top';
   const innerY = isTopBadge && hasBadge ? badgeHeight + innerMargin : innerMargin;
@@ -267,7 +267,7 @@ export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig =>
 
 /**
  * Bake a logo background (sharp square per brand) into the image itself so
- * qr-code-styling — which has no native logo-background option — still shows one.
+ * qr-code-styling, which has no native logo-background option, still shows one.
  */
 export const bakeLogoWithBackground = (
   src: string,

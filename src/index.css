@@ -64,7 +64,7 @@
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Bodhya scrollbar — cream track, ink thumb, teal hover. Sharp. */
+/* Bodhya scrollbar: cream track, ink thumb, teal hover. Sharp. */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;

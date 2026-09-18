@@ -220,7 +220,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) =>
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
           )}
           <p>
-            Contrast {contrast.toFixed(2)}:1 —{' '}
+            Contrast {contrast.toFixed(2)}:1 {' '}
             {lowContrast
               ? 'below 3:1. Scanners may fail. Darken modules or lighten background.'
               : 'good for scanning.'}
