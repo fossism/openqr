@@ -1,43 +1,48 @@
 # OpenQR
 
-OpenQR is a privacy-first, open-source QR code generator that runs completely inside your browser. No account required, no tracking servers, no paywalls for high-resolution exports, and your QR codes never expire.
+A free QR code maker that runs fully in your browser. No account, no tracking, no paywalls. Your QR codes never expire.
 
-## Why OpenQR?
+Try it here: https://fossism.github.io/openqr/
 
-Most online QR code generators route your data through backend tracking servers or force you to pay for standard features like SVG downloads or logo uploads.
+## What you can make
 
-OpenQR is built differently:
-- **100% Client-Side**: All rendering happens locally in your browser. No data is sent to external servers, and it works offline.
-- **Real-Time Scan Verification**: Checks if your QR code is scannable as you edit colors, shapes, and logos, preventing misprints.
-- **Full Customization**: Customize module dot shapes, corner frames, linear/radial gradients, center logos, and callout text ("SCAN ME").
-- **Bulk Batch Export**: Paste a multi-line list or CSV of links to generate multiple labeled QR codes and download them as a ZIP file.
-- **Vector & Print Formats**: Export high-resolution PNG (up to 4096px), scalable SVG vectors, WEBP, or printable PDF documents.
+Pick what goes inside the code, then style it how you like:
 
-## Supported Content Types
+- Website links
+- Wi-Fi logins (WPA/WPA2/WPA3, WEP, open networks)
+- Contact cards (vCard)
+- Email and SMS drafts
+- WhatsApp chat links
+- Crypto and UPI payment requests (BTC, ETH, SOL, UPI)
+- Calendar events
+- Plain text
 
-- Website URLs
-- Wi-Fi Networks (WPA/WPA2/WPA3, WEP, Open)
-- vCard 3.0 Contact Cards
-- Email & SMS Messages
-- WhatsApp Direct Chat
-- Crypto Payments (BTC, ETH, SOL, UPI)
-- iCal Calendar Events
-- Plain Text
+## Styling
 
-## Tech Stack
+- Square or rounded dot patterns, corner frames, and inner eyes
+- Solid colors or gradients
+- Your own logo in the center, with optional backing shape
+- Frames with call-to-action text like SCAN ME, including a ticket-stub style
+- Five built-in themes: Classic Ink, Brand Teal, Terracotta, FOSS Terminal, Sharp Ink
 
-- React 19, TypeScript, Vite
-- Tailwind CSS, Lucide Icons
-- qr-code-styling, jsQR
-- jspdf, jszip, file-saver
+## Before you print
 
-## Getting Started
+OpenQR scans your code live as you edit it. If a color combo, logo size, or long text makes it hard to read, it tells you straight away, so you never print a dead code. It also warns you about low contrast and oversized payloads.
 
-### Prerequisites
+## Export
 
-- Node.js (v18 or higher) and npm
+- PNG from 512 up to 4096 px
+- SVG vector, WebP, and print-ready PDF
+- Copy the image straight to your clipboard
+- Save and reload your design as a theme file
+- Copy a share link that restores your design and content
+- Batch mode: paste a list of links, get back a ZIP of labeled QR codes
 
-### Installation & Local Run
+Everything is generated on your device. Nothing you type is uploaded anywhere, and the app works offline once loaded.
+
+## Run it locally
+
+You need Node.js 18 or newer.
 
 ```bash
 git clone https://github.com/fossism/openqr.git
@@ -47,6 +52,24 @@ npm run dev
 ```
 
 Open `http://localhost:5173` in your browser.
+
+Other commands:
+
+```bash
+npm run build   # type-check and build for production
+npm run lint    # lint the codebase
+npm run preview # preview the production build
+```
+
+## Deploy it yourself
+
+Pushing to `main` deploys to GitHub Pages automatically (see `.github/workflows/deploy.yml`). For a project page it builds with the `/openqr/` base path; for hosts that serve from the domain root (like Cloudflare Pages), a plain `npm run build` just works.
+
+Cloudflare Pages settings that work: framework preset Vite, build command `npm run build`, output directory `dist`.
+
+## Built with
+
+React 19, TypeScript, Vite, Tailwind CSS, Lucide icons, qr-code-styling, jsQR, jspdf, jszip, file-saver.
 
 ## License
 

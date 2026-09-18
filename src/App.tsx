@@ -354,39 +354,37 @@ export function App() {
 
           {/* Customization Navigation Bar */}
           <div className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-6">
-            <div className="flex items-center justify-between border-b border-[#241E1B] pb-4 overflow-x-auto gap-2">
-              <div className="flex items-center gap-1">
-                {[
-                  { id: 'content', label: '1. Payload', icon: <Globe className="w-3.5 h-3.5" /> },
-                  { id: 'styles', label: '2. Shapes', icon: <Shapes className="w-3.5 h-3.5" /> },
-                  { id: 'colors', label: '3. Colors', icon: <Palette className="w-3.5 h-3.5" /> },
-                  { id: 'logo', label: '4. Logo', icon: <ImageIcon className="w-3.5 h-3.5" /> },
-                  { id: 'frame', label: '5. Frame', icon: <FrameIcon className="w-3.5 h-3.5" /> },
-                  { id: 'export', label: '6. Export', icon: <Download className="w-3.5 h-3.5" /> },
+            <div className="flex items-center gap-2 border-b border-[#241E1B] pb-4 overflow-x-auto">
+              {[
+                  { id: 'content', label: 'Payload', icon: <Globe className="w-3.5 h-3.5" /> },
+                  { id: 'styles', label: 'Shapes', icon: <Shapes className="w-3.5 h-3.5" /> },
+                  { id: 'colors', label: 'Colors', icon: <Palette className="w-3.5 h-3.5" /> },
+                  { id: 'logo', label: 'Logo', icon: <ImageIcon className="w-3.5 h-3.5" /> },
+                  { id: 'frame', label: 'Frame', icon: <FrameIcon className="w-3.5 h-3.5" /> },
+                  { id: 'export', label: 'Export', icon: <Download className="w-3.5 h-3.5" /> },
                 ].map((step) => (
                   <button
                     key={step.id}
                     type="button"
                     onClick={() => setActiveCustomTab(step.id as typeof activeCustomTab)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-medium transition-all ${
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-medium transition-all shrink-0 ${
                       activeCustomTab === step.id
                         ? 'bg-[#FFF8F3] text-[#241E1B] border border-[#241E1B] shadow-[2px_2px_0_#241E1B]'
-                        : 'text-[#241E1B]/70 hover:text-[#241E1B] hover:bg-[#FFF8F3]/40'
+                        : 'text-[#241E1B]/70 hover:text-[#241E1B] hover:bg-[#FFF8F3]/40 border border-transparent'
                     }`}
                   >
                     {step.icon}
                     <span>{step.label}</span>
                   </button>
                 ))}
-              </div>
 
               <button
                 type="button"
                 onClick={handleResetDesign}
                 title="Reset to default design style"
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-none bg-[#FFF8F3] hover:bg-[#FFF8F3] text-[#241E1B]/70 hover:text-[#241E1B] text-xs transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-medium transition-colors shrink-0 ml-auto text-[#241E1B]/70 hover:text-[#241E1B] hover:bg-[#FFF8F3]/40 border border-transparent"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Reset</span>
               </button>
             </div>
