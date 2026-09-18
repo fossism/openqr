@@ -79,7 +79,32 @@ interface HistoryEntry {
   rawText: string;
 }
 
-const parseShareHash = (): { config: Partial<QRDesignConfig>; payload: string } | null => {
+interface ShareForms {
+  urlInput: string;
+  wifiData: WifiData;
+  vcardData: VCardData;
+  emailData: EmailData;
+  smsData: SmsData;
+  whatsappData: WhatsappData;
+  cryptoData: CryptoData;
+  eventData: EventData;
+  rawText: string;
+}
+
+interface ShareDataV2 {
+  v: 2;
+  config: Partial<QRDesignConfig>;
+  contentType: ContentType;
+  forms: ShareForms;
+}
+
+interface ShareDataV1 {
+  v?: number;
+  config: Partial<QRDesignConfig>;
+  payload: string;
+}
+
+const decodeShareHash = (): ShareDataV2 | ShareDataV1 | null => {
   try {
     const hash = window.location.hash;
     if (!hash.startsWith('#qr=')) return null;
@@ -87,12 +112,23 @@ const parseShareHash = (): { config: Partial<QRDesignConfig>; payload: string } 
     const bin = atob(encoded);
     const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
     const json = new TextDecoder().decode(bytes);
-    const parsed = JSON.parse(json) as { v: number; config: Partial<QRDesignConfig>; payload: string };
+    const parsed = JSON.parse(json) as ShareDataV2 | ShareDataV1;
     if (!parsed || typeof parsed !== 'object') return null;
-    return { config: parsed.config ?? {}, payload: parsed.payload ?? '' };
+    return parsed;
   } catch {
     return null;
   }
+};
+
+// Backwards-compatible parser: v2 carries full form state, v1 only a payload string.
+const parseShareHash = (): { config: Partial<QRDesignConfig>; payload: string } | null => {
+  const parsed = decodeShareHash();
+  if (!parsed) return null;
+  if ((parsed as ShareDataV2).v === 2) {
+    return { config: (parsed as ShareDataV2).config ?? {}, payload: '' };
+  }
+  const v1 = parsed as ShareDataV1;
+  return { config: v1.config ?? {}, payload: v1.payload ?? '' };
 };
 
 export function App() {
@@ -170,17 +206,35 @@ export function App() {
     return DEFAULT_QR_CONFIG;
   });
 
-  // Apply shared payload once on mount
+  // Apply shared state once on mount (v2 restores full forms, v1 sniffs the payload)
   useEffect(() => {
-    const shared = parseShareHash();
-    if (!shared || !shared.payload) return;
-    const payload = shared.payload;
-    if (/^https?:\/\//i.test(payload) && payload.length < 500) {
-      setUrlInput(payload);
-      setActiveContentType('url');
+    const shared = decodeShareHash();
+    if (!shared) return;
+    if ((shared as ShareDataV2).v === 2 && (shared as ShareDataV2).forms) {
+      const v2 = shared as ShareDataV2;
+      setActiveContentType(v2.contentType);
+      setUrlInput(v2.forms.urlInput);
+      setWifiData(v2.forms.wifiData);
+      setVcardData(v2.forms.vcardData);
+      setEmailData(v2.forms.emailData);
+      setSmsData(v2.forms.smsData);
+      setWhatsappData(v2.forms.whatsappData);
+      setCryptoData(v2.forms.cryptoData);
+      setEventData(v2.forms.eventData);
+      setRawText(v2.forms.rawText);
     } else {
-      setRawText(payload);
-      setActiveContentType('text');
+      const payload = (shared as ShareDataV1).payload;
+      if (!payload) {
+        window.history.replaceState(null, '', window.location.pathname);
+        return;
+      }
+      if (/^https?:\/\//i.test(payload) && payload.length < 500) {
+        setUrlInput(payload);
+        setActiveContentType('url');
+      } else {
+        setRawText(payload);
+        setActiveContentType('text');
+      }
     }
     setActiveCustomTab('content');
     // Clear hash so refresh doesn't re-apply
@@ -298,6 +352,27 @@ export function App() {
 
   const handleResetDesign = () => {
     setConfig(DEFAULT_QR_CONFIG);
+  };
+
+  const buildShareData = (): ShareDataV2 => {
+    // Logo bitmap excluded: base64 art would blow up URL length.
+    const shareable = { ...config, logo: { ...config.logo, src: '' } };
+    return {
+      v: 2,
+      config: shareable,
+      contentType: activeContentType,
+      forms: {
+        urlInput: urlInput.slice(0, 2000),
+        wifiData,
+        vcardData,
+        emailData,
+        smsData,
+        whatsappData,
+        cryptoData,
+        eventData,
+        rawText: rawText.slice(0, 2000),
+      },
+    };
   };
 
   const handleUseDecodedPayload = (text: string) => {
@@ -488,6 +563,7 @@ export function App() {
                   config={config}
                   payloadText={payloadText}
                   onImportConfig={setConfig}
+                  getShareData={buildShareData}
                   onOpenBatch={() => setShowBatchModal(true)}
                 />
               )}

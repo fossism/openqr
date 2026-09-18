@@ -7,6 +7,7 @@ import {
   copyCanvasToClipboard,
   exportConfigJson,
   parseConfigJson,
+  encodeShareData,
   triggerConfetti,
 } from '../../utils/exportUtils';
 import { mergeQRConfig } from '../../utils/qrGenerator';
@@ -20,6 +21,7 @@ interface ExportPanelProps {
   payloadText: string;
   onImportConfig: (config: QRDesignConfig) => void;
   onOpenBatch: () => void;
+  getShareData: () => unknown;
 }
 
 export const ExportPanel: React.FC<ExportPanelProps> = ({
@@ -30,6 +32,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
   payloadText,
   onImportConfig,
   onOpenBatch,
+  getShareData,
 }) => {
   const [resolution, setResolution] = useState<number>(1024);
   const [filename, setFilename] = useState<string>('openqr-code');
@@ -100,20 +103,12 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
 
   const handleShareLink = async () => {
     try {
-      // Exclude logo bitmap (can be MBs) from share URL; design + payload only
-      const shareable = { ...config, logo: { ...config.logo, src: '' } };
-      const data = JSON.stringify({ v: 1, config: shareable, payload: payloadText.slice(0, 2000) });
-      const bytes = new TextEncoder().encode(data);
-      let bin = '';
-      bytes.forEach((b) => {
-        bin += String.fromCharCode(b);
-      });
-      const encoded = btoa(bin);
+      const encoded = encodeShareData(getShareData());
       const url = `${window.location.origin}${window.location.pathname}#qr=${encoded}`;
       await navigator.clipboard.writeText(url);
       setCopiedLink(true);
       setTimeout(() => setCopiedLink(false), 2000);
-      flash('Share link copied (logo excluded for URL size).');
+      flash('Share link copied (logo image excluded for URL size).');
     } catch {
       flash('Could not build share link.');
     }

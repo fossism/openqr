@@ -155,3 +155,13 @@ export const parseConfigJson = async (file: File): Promise<unknown> => {
   const text = await file.text();
   return JSON.parse(text);
 };
+
+export const encodeShareData = (data: unknown): string => {
+  const json = JSON.stringify(data);
+  const bytes = new TextEncoder().encode(json);
+  let bin = '';
+  bytes.forEach((b) => {
+    bin += String.fromCharCode(b);
+  });
+  return btoa(bin);
+};
