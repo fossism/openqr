@@ -256,13 +256,23 @@ export const renderQRSvgBlob = async (
 
 /** Deep-merge a saved config over defaults so nested gradient/logo/frame survive upgrades. */
 export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig => {
-  return {
+  const merged: QRDesignConfig = {
     ...DEFAULT_QR_CONFIG,
     ...saved,
     gradient: { ...DEFAULT_QR_CONFIG.gradient, ...(saved.gradient ?? {}) },
     logo: { ...DEFAULT_QR_CONFIG.logo, ...(saved.logo ?? {}) },
     frame: { ...DEFAULT_QR_CONFIG.frame, ...(saved.frame ?? {}) },
   };
+  // Migrate old default (white-circle) to new default sharp square.
+  if ((saved.logo?.backgroundType as string) === 'white-circle' && !saved.logo?.src) {
+    merged.logo.backgroundType = 'white-square';
+  }
+  // Any sticky saved circle default without explicit logo also moves to sharp square
+  // for brand consistency, unless user picked it after adding a logo.
+  if (merged.logo.backgroundType === 'white-circle' && !merged.logo.src) {
+    merged.logo.backgroundType = 'white-square';
+  }
+  return merged;
 };
 
 /**
@@ -280,8 +290,12 @@ export const bakeLogoWithBackground = (
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       try {
+        // SVG data URLs may report 0 natural size — fall back to a sane raster size.
+        const naturalW = img.naturalWidth || (img.width as number) || 240;
+        const naturalH = img.naturalHeight || (img.height as number) || 240;
+        if (!naturalW || !naturalH) return resolve(src);
         const pad = 24;
-        const size = Math.max(img.naturalWidth, img.naturalHeight) + pad * 2;
+        const size = Math.max(naturalW, naturalH) + pad * 2;
         const canvas = document.createElement('canvas');
         canvas.width = size;
         canvas.height = size;
@@ -296,12 +310,12 @@ export const bakeLogoWithBackground = (
           ctx.arc(cx, cy, r, 0, Math.PI * 2);
           ctx.fill();
         } else {
-          // Sharp rectangle per brand guideline
+          // Sharp rectangle per brand guideline (white-square default)
           ctx.fillRect(4, 4, size - 8, size - 8);
         }
-        const dx = (size - img.naturalWidth) / 2;
-        const dy = (size - img.naturalHeight) / 2;
-        ctx.drawImage(img, dx, dy, img.naturalWidth, img.naturalHeight);
+        const dx = (size - naturalW) / 2;
+        const dy = (size - naturalH) / 2;
+        ctx.drawImage(img, dx, dy, naturalW, naturalH);
         resolve(canvas.toDataURL('image/png'));
       } catch {
         resolve(src);

@@ -418,7 +418,7 @@ export function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         {/* Left Column: Form & Customization Studio (Cols 1-7) */}
-        <div className="lg:col-span-7 space-y-6">
+        <div className="lg:col-span-7 space-y-6 order-2 lg:order-1">
 
           {/* Content Type Selector Pills */}
           <div className="p-1.5 rounded-none bg-[#FFF8F3] border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B] flex flex-wrap gap-1">
@@ -624,7 +624,7 @@ export function App() {
         </div>
 
         {/* Right Column: Live Visual Preview & Verification Engine (Cols 8-12) */}
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-5 order-1 lg:order-2">
           <div className="sticky top-24 space-y-6">
             <div className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B]">
               <h2 className="text-sm font-bold text-[#241E1B] mb-4 flex items-center justify-between">

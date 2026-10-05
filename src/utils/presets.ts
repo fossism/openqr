@@ -30,7 +30,7 @@ export const DEFAULT_QR_CONFIG: QRDesignConfig = {
     src: '',
     scale: 0.22,
     margin: 4,
-    backgroundType: 'white-circle',
+    backgroundType: 'white-square',
     backgroundColor: '#FFF8F3',
   },
   frame: {
