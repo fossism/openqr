@@ -145,7 +145,13 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) =>
               onChange={(e) => onChange('backgroundColor', e.target.value)}
               className="w-9 h-9 rounded-none bg-[#FFF8F3] border border-[#241E1B] cursor-pointer p-0.5 disabled:opacity-40"
             />
-            <span className="text-xs text-[#241E1B] font-mono">{config.backgroundColor}</span>
+            <input
+              type="text"
+              value={config.backgroundColor}
+              disabled={config.transparentBackground}
+              onChange={(e) => onChange('backgroundColor', e.target.value)}
+              className="w-28 bg-[#FFF8F3] border border-[#241E1B] rounded-none px-3 py-2 text-xs font-mono text-[#241E1B] focus:outline-none disabled:opacity-40"
+            />
           </div>
 
           <div className="flex items-center gap-2">
