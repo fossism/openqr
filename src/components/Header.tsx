@@ -1,5 +1,5 @@
 import React from 'react';
-import { QrCode, ScanLine, Palette, ShieldCheck } from 'lucide-react';
+import { ScanLine, Palette, ShieldCheck } from 'lucide-react';
 
 interface HeaderProps {
   onOpenPresets: () => void;
@@ -12,8 +12,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenPresets, onOpenScan }) => 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         {/* Logo */}
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-[#E8B84B] text-[#241E1B] border-2 border-[#FFF8F3]">
-            <QrCode className="w-6 h-6" />
+          <div className="p-2 bg-[#16564F] text-[#FFF8F3] border-2 border-[#FFF8F3]">
+            <svg viewBox="0 0 32 32" className="w-5 h-5" aria-hidden="true">
+              <rect x="4" y="4" width="9" height="9" fill="#FFF8F3" />
+              <rect x="6.5" y="6.5" width="4" height="4" fill="#16564F" />
+              <rect x="19" y="4" width="9" height="9" fill="#FFF8F3" />
+              <rect x="21.5" y="6.5" width="4" height="4" fill="#16564F" />
+              <rect x="4" y="19" width="9" height="9" fill="#FFF8F3" />
+              <rect x="6.5" y="21.5" width="4" height="4" fill="#16564F" />
+              <rect x="21" y="16" width="3" height="3" fill="#FFF8F3" />
+              <rect x="19" y="21" width="3" height="3" fill="#FFF8F3" />
+              <rect x="24" y="21" width="4" height="4" fill="#FFF8F3" />
+              <rect x="18" y="25" width="4" height="4" fill="#FFF8F3" />
+              <rect x="24" y="27" width="3" height="3" fill="#FFF8F3" />
+            </svg>
           </div>
           <div>
             <div className="flex items-center gap-2">
