@@ -94,7 +94,7 @@ export const PRESET_THEMES: PresetTheme[] = [
     config: {
       foregroundColor: '#AD544B',
       backgroundColor: '#FFF8F3',
-      cornerSquareColor: '#8E433C',
+      cornerSquareColor: '#AD544B',
       cornerDotColor: '#AD544B',
       dotStyle: 'square',
       cornerSquareStyle: 'square',

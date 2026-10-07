@@ -272,6 +272,10 @@ export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig =>
   if (merged.logo.backgroundType === 'white-circle' && !merged.logo.src) {
     merged.logo.backgroundType = 'white-square';
   }
+  // Migrate old terracotta corners (darker #8E433C) to match the module color.
+  if (merged.cornerSquareColor === '#8E433C' && merged.foregroundColor === '#AD544B') {
+    merged.cornerSquareColor = '#AD544B';
+  }
   return merged;
 };
 
