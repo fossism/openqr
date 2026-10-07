@@ -346,6 +346,10 @@ export function App() {
     setConfig((prev) => ({
       ...prev,
       ...theme.config,
+      // Brand rule: every preset renders sharp square modules end-to-end.
+      dotStyle: 'square',
+      cornerSquareStyle: 'square',
+      cornerDotStyle: 'square',
       gradient: { ...prev.gradient, ...(theme.config.gradient ?? {}) },
     }));
   };
