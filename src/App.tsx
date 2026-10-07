@@ -632,9 +632,12 @@ export function App() {
           <div className="sticky top-24 space-y-6">
             <div className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B]">
               <h2 className="text-sm font-bold text-[#241E1B] mb-4 flex items-center justify-between">
-                <span>Live Studio Preview</span>
-                <span className="text-[11px] font-mono font-normal text-[#241E1B]/70">
-                  ECC Level: <strong className="text-[#241E1B]">{config.errorCorrectionLevel}</strong>
+                <span className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 bg-[#E8B84B] border border-[#241E1B] inline-block" />
+                  Live Studio Preview
+                </span>
+                <span className="text-[11px] font-mono font-bold px-2 py-0.5 bg-[#16564F] text-[#FFF8F3] border border-[#241E1B]">
+                  ECC · {config.errorCorrectionLevel}
                 </span>
               </h2>
 

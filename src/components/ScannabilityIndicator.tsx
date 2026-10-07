@@ -48,13 +48,13 @@ export const ScannabilityIndicator: React.FC<ScannabilityIndicatorProps> = ({
 
   if (result.status === 'warning') {
     return (
-      <div className="p-3.5 bg-[#241E1B] border-2 border-[#241E1B] flex items-start gap-3">
-        <div className="p-2 bg-[#E8B84B] text-[#241E1B] shrink-0 mt-0.5">
+      <div className="p-3.5 bg-[#FFF8F3] border-2 border-[#241E1B] flex items-start gap-3">
+        <div className="p-2 bg-[#E8B84B] text-[#241E1B] border border-[#241E1B] shrink-0 mt-0.5">
           <AlertTriangle className="w-5 h-5" />
         </div>
         <div>
-          <h4 className="text-xs font-bold text-[#E8B84B]">Scannability Notice</h4>
-          <p className="text-xs text-[#FFF8F3] mt-0.5 font-medium">{result.message}</p>
+          <h4 className="text-xs font-bold text-[#241E1B]">Scannability Notice</h4>
+          <p className="text-xs text-[#241E1B]/80 mt-0.5 font-medium">{result.message}</p>
         </div>
       </div>
     );
