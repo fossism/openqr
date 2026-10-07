@@ -110,11 +110,11 @@ export const PRESET_THEMES: PresetTheme[] = [
   {
     id: 'foss-terminal',
     name: 'FOSS Terminal',
-    description: 'FOSS mint on code-night black',
-    previewGradient: 'linear-gradient(135deg, #1A1A1A 0%, #08B74F 100%)',
+    description: 'FOSS mint on white',
+    previewGradient: 'linear-gradient(135deg, #FFFFFF 0%, #08B74F 100%)',
     config: {
       foregroundColor: '#08B74F',
-      backgroundColor: '#1A1A1A',
+      backgroundColor: '#FFFFFF',
       cornerSquareColor: '#08B74F',
       cornerDotColor: '#08B74F',
       dotStyle: 'square',
