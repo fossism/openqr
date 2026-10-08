@@ -14,7 +14,6 @@ import {
   Palette,
   Image as ImageIcon,
   Frame as FrameIcon,
-  Download,
   RotateCcw,
   Sparkles,
   History,
@@ -136,7 +135,7 @@ export function App() {
   const [activeContentType, setActiveContentType] = useState<ContentType>('url');
 
   // Customization Section State
-  const [activeCustomTab, setActiveCustomTab] = useState<'content' | 'styles' | 'colors' | 'logo' | 'frame' | 'export'>('content');
+  const [activeCustomTab, setActiveCustomTab] = useState<'content' | 'styles' | 'colors' | 'logo' | 'frame'>('content');
 
   // Payload Form States
   const [urlInput, setUrlInput] = useState<string>('https://openqr.io');
@@ -446,7 +445,7 @@ export function App() {
           </div>
 
           {/* Customization Navigation Bar */}
-          <div className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-6">
+          <div id="customize" className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B] space-y-6">
             <div className="flex items-center gap-2 border-b border-[#241E1B] pb-4 overflow-x-auto">
               {[
                   { id: 'content', label: 'Payload', icon: <Globe className="w-3.5 h-3.5" /> },
@@ -454,7 +453,6 @@ export function App() {
                   { id: 'colors', label: 'Colors', icon: <Palette className="w-3.5 h-3.5" /> },
                   { id: 'logo', label: 'Logo', icon: <ImageIcon className="w-3.5 h-3.5" /> },
                   { id: 'frame', label: 'Frame', icon: <FrameIcon className="w-3.5 h-3.5" /> },
-                  { id: 'export', label: 'Export', icon: <Download className="w-3.5 h-3.5" /> },
                 ].map((step) => (
                   <button
                     key={step.id}
@@ -558,19 +556,6 @@ export function App() {
                   onChange={(frame) => updateConfigField('frame', frame)}
                 />
               )}
-
-              {activeCustomTab === 'export' && (
-                <ExportPanel
-                  getCanvasRef={() => previewRef.current?.getCanvas() || null}
-                  getHighResCanvas={(size) => previewRef.current?.getHighResCanvas(size) ?? Promise.resolve(null)}
-                  getSvgBlob={() => previewRef.current?.getSvgBlob() ?? Promise.resolve(null)}
-                  config={config}
-                  payloadText={payloadText}
-                  onImportConfig={setConfig}
-                  getShareData={buildShareData}
-                  onOpenBatch={() => setShowBatchModal(true)}
-                />
-              )}
             </div>
           </div>
 
@@ -631,20 +616,22 @@ export function App() {
         <div className="lg:col-span-5 order-1 lg:order-2">
           <div className="sticky top-24 space-y-6">
             <div className="bg-[#FFF8F3] border-2 border-[#241E1B] rounded-none p-6 shadow-[6px_6px_0_#241E1B]">
-              <h2 className="text-sm font-bold text-[#241E1B] mb-4 flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 bg-[#E8B84B] border border-[#241E1B] inline-block" />
-                  Live Studio Preview
-                </span>
-                <span className="text-[11px] font-mono font-bold px-2 py-0.5 bg-[#16564F] text-[#FFF8F3] border border-[#241E1B]">
-                  ECC · {config.errorCorrectionLevel}
-                </span>
-              </h2>
-
               <QRPreview
                 ref={previewRef}
                 config={config}
                 payloadText={payloadText}
+                exportPanel={
+                  <ExportPanel
+                    getCanvasRef={() => previewRef.current?.getCanvas() || null}
+                    getHighResCanvas={(size) => previewRef.current?.getHighResCanvas(size) ?? Promise.resolve(null)}
+                    getSvgBlob={() => previewRef.current?.getSvgBlob() ?? Promise.resolve(null)}
+                    config={config}
+                    payloadText={payloadText}
+                    onImportConfig={setConfig}
+                    getShareData={buildShareData}
+                    onOpenBatch={() => setShowBatchModal(true)}
+                  />
+                }
               />
             </div>
           </div>
