@@ -149,6 +149,27 @@ export const PRESET_THEMES: PresetTheme[] = [
       },
     },
   },
+  {
+    id: 'inverse-mono',
+    name: 'Inverse Mono',
+    description: 'White modules on black',
+    previewGradient: 'linear-gradient(135deg, #FFFFFF 0%, #000000 100%)',
+    config: {
+      foregroundColor: '#FFFFFF',
+      backgroundColor: '#000000',
+      cornerSquareColor: '#FFFFFF',
+      cornerDotColor: '#FFFFFF',
+      dotStyle: 'square',
+      cornerSquareStyle: 'square',
+      cornerDotStyle: 'square',
+      gradient: {
+        type: 'none',
+        rotation: 0,
+        color1: '#FFFFFF',
+        color2: '#FFFFFF',
+      },
+    },
+  },
 ];
 
 // SVG Brand Preset Icons: ink strokes (teal reserved for links/accents)
