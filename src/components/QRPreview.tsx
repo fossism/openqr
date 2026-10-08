@@ -30,6 +30,7 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
     const [copiedImage, setCopiedImage] = useState(false);
     const [zoom, setZoom] = useState<number>(1);
     const [showExport, setShowExport] = useState<boolean>(false);
+    const exportPanelRef = useRef<HTMLDivElement>(null);
     const [scanResult, setScanResult] = useState<ScanVerificationResult>({
       isScannable: false,
       decodedText: null,
@@ -157,7 +158,18 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
         {exportPanel && (
           <button
             type="button"
-            onClick={() => setShowExport((v) => !v)}
+            onClick={() => {
+              const opening = !showExport;
+              setShowExport(opening);
+              // Scroll the freshly opened panel into view after it renders
+              if (opening) {
+                requestAnimationFrame(() => {
+                  setTimeout(() => {
+                    exportPanelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  }, 50);
+                });
+              }
+            }}
             aria-expanded={showExport}
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#241E1B] hover:bg-[#E8B84B] hover:text-[#241E1B] text-[#FFF8F3] font-bold text-sm border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B] transition-all"
           >
@@ -166,7 +178,10 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
           </button>
         )}
         {exportPanel && showExport && (
-          <div className="w-full p-4 rounded-none bg-[#FFF8F3] border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B]">
+          <div
+            ref={exportPanelRef}
+            className="w-full p-4 rounded-none bg-[#FFF8F3] border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B]"
+          >
             {exportPanel}
           </div>
         )}
