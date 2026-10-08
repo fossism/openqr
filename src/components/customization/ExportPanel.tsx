@@ -132,7 +132,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3">
         <div>
           <label htmlFor="export-filename" className="block text-xs font-medium text-[#241E1B] mb-1.5">
             File name

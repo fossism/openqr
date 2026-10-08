@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from 'react';
+import type { ReactNode } from 'react';
 import QRCodeStyling from 'qr-code-styling';
-import { Copy, Check, ZoomIn, ZoomOut, Image as ImageIcon } from 'lucide-react';
+import { Copy, Check, ZoomIn, ZoomOut, Image as ImageIcon, Download } from 'lucide-react';
 import type { QRDesignConfig } from '../types/qr';
 import { createQRCodeOptions, drawFrameOnCanvas, renderQRCanvasAtSize, renderQRSvgBlob } from '../utils/qrGenerator';
-import { verifyQRScannability, getContrastRatio } from '../utils/qrScanner';
+import { verifyQRScannability } from '../utils/qrScanner';
 import type { ScanVerificationResult } from '../utils/qrScanner';
-import { getPayloadDensity } from '../utils/formatters';
 import { copyCanvasToClipboard } from '../utils/exportUtils';
 import { ScannabilityIndicator } from './ScannabilityIndicator';
 
@@ -19,15 +19,17 @@ export interface QRPreviewHandle {
 interface QRPreviewProps {
   config: QRDesignConfig;
   payloadText: string;
+  exportPanel?: ReactNode;
 }
 
 export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
-  ({ config, payloadText }, ref) => {
+  ({ config, payloadText, exportPanel }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const finalCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const [copied, setCopied] = useState(false);
     const [copiedImage, setCopiedImage] = useState(false);
     const [zoom, setZoom] = useState<number>(1);
+    const [showExport, setShowExport] = useState<boolean>(false);
     const [scanResult, setScanResult] = useState<ScanVerificationResult>({
       isScannable: false,
       decodedText: null,
@@ -113,12 +115,6 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
       }
     };
 
-    const density = getPayloadDensity(payloadText || '');
-    const contrast = config.transparentBackground
-      ? null
-      : getContrastRatio(config.foregroundColor, config.backgroundColor);
-    const lowContrast = contrast !== null && contrast < 2.5;
-
     return (
       <div className="flex flex-col items-center justify-between h-full space-y-5">
         {/* Scannability Verification Badge */}
@@ -157,32 +153,23 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
           />
         </div>
 
-        {/* Payload stats */}
-        <div className="w-full flex flex-wrap items-center gap-2 text-[11px]">
-          <span className="px-2 py-1 rounded-none bg-[#FFF8F3] border border-[#241E1B]/30 text-[#241E1B] font-mono">
-            {density.length} chars
-          </span>
-          <span
-            className={`px-2 py-1 rounded-none border-2 font-bold ${
-              density.level === 'easy'
-                ? 'bg-[#16564F]/10 border-[#16564F] text-[#16564F]'
-                : density.level === 'medium'
-                  ? 'bg-[#FFF8F3] border-[#241E1B] text-[#241E1B]'
-                  : density.level === 'dense'
-                    ? 'bg-[#241E1B] border-[#241E1B] text-[#FFF8F3]'
-                    : 'bg-[#241E1B] border-[#E8B84B] text-[#E8B84B]'
-            }`}
-            title={density.hint}
+        {/* Primary Download CTA + inline export options */}
+        {exportPanel && (
+          <button
+            type="button"
+            onClick={() => setShowExport((v) => !v)}
+            aria-expanded={showExport}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#241E1B] hover:bg-[#E8B84B] hover:text-[#241E1B] text-[#FFF8F3] font-bold text-sm border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B] transition-all"
           >
-            {density.level === 'easy' ? 'Compact' : density.level === 'medium' ? 'Medium' : density.level === 'dense' ? 'Dense' : 'Very dense'}
-          </span>
-          {lowContrast && (
-            <span className="px-2 py-1 rounded-none bg-[#241E1B]/5 border border-[#241E1B] text-[#241E1B]" title={`Contrast ratio ${contrast?.toFixed(2)}:1. Aim for at least 3:1 for reliable scanning.`}>
-              Low contrast {contrast?.toFixed(1)}:1
-            </span>
-          )}
-        </div>
-        <p className="w-full text-[11px] text-[#241E1B]/60 -mt-3" title={density.hint}>{density.hint}</p>
+            <Download className="w-4 h-4" />
+            Download QR
+          </button>
+        )}
+        {exportPanel && showExport && (
+          <div className="w-full p-4 rounded-none bg-[#FFF8F3] border-2 border-[#241E1B] shadow-[4px_4px_0_#241E1B]">
+            {exportPanel}
+          </div>
+        )}
 
         {/* Payload Quick Bar */}
         <div className="w-full p-3 rounded-none bg-[#FFF8F3] border border-[#241E1B] flex items-center justify-between gap-2 text-xs">
