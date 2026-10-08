@@ -175,7 +175,7 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
         <div className="w-full p-3 rounded-none bg-[#FFF8F3] border border-[#241E1B] flex items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2 truncate pr-2 min-w-0">
             <span className="text-[#241E1B]/60 font-medium shrink-0">Payload:</span>
-            <span className="text-[#241E1B] font-mono truncate">{payloadText || 'https://openqr.io'}</span>
+            <span className="text-[#241E1B] font-mono truncate">{payloadText || 'https://github.com/fossism'}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button

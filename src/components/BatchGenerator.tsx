@@ -44,9 +44,9 @@ export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
   config,
 }) => {
   const [inputText, setInputText] = useState<string>(
-    `https://openqr.io/table-1, Table 1
-https://openqr.io/table-2, Table 2
-https://openqr.io/table-3, Table 3`
+    `https://github.com/fossism/table-1, Table 1
+https://github.com/fossism/table-2, Table 2
+https://github.com/fossism/table-3, Table 3`
   );
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [progress, setProgress] = useState<number>(0);

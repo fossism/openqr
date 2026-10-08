@@ -47,7 +47,7 @@ export const createQRCodeOptions = (
     width: config.width,
     height: config.height,
     type: 'canvas',
-    data: data || 'https://openqr.io',
+    data: data || 'https://github.com/fossism',
     margin: config.margin,
     qrOptions: {
       errorCorrectionLevel: config.errorCorrectionLevel as ErrorCorrectionLevel,

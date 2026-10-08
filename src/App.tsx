@@ -138,7 +138,7 @@ export function App() {
   const [activeCustomTab, setActiveCustomTab] = useState<'content' | 'styles' | 'colors' | 'logo' | 'frame'>('content');
 
   // Payload Form States
-  const [urlInput, setUrlInput] = useState<string>('https://openqr.io');
+  const [urlInput, setUrlInput] = useState<string>('https://github.com/fossism');
   const [wifiData, setWifiData] = useState<WifiData>({
     ssid: 'Home_WiFi',
     password: 'password123',
@@ -152,7 +152,7 @@ export function App() {
     title: 'Lead Designer',
     phone: '+1 (555) 234-5678',
     email: 'alex@openqr.io',
-    website: 'https://openqr.io',
+    website: 'https://github.com/fossism',
     street: '100 Market St',
     city: 'San Francisco',
     country: 'USA',
@@ -272,7 +272,7 @@ export function App() {
     switch (activeContentType) {
       case 'url': {
         const trimmed = urlInput.trim();
-        if (!trimmed) return 'https://openqr.io';
+        if (!trimmed) return 'https://github.com/fossism';
         return normalizeUrl(trimmed);
       }
       case 'wifi':
@@ -286,7 +286,7 @@ export function App() {
       case 'whatsapp':
         return formatWhatsapp(whatsappData);
       case 'crypto':
-        return formatCrypto(cryptoData) || 'https://openqr.io';
+        return formatCrypto(cryptoData) || 'https://github.com/fossism';
       case 'event':
         return formatEvent(eventData);
       case 'text':
@@ -473,7 +473,7 @@ export function App() {
                 type="button"
                 onClick={handleResetDesign}
                 title="Reset to default design style"
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-medium transition-colors shrink-0 ml-auto text-[#241E1B]/70 hover:text-[#241E1B] hover:bg-[#FFF8F3]/40 border border-transparent"
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-none text-xs font-medium transition-colors shrink-0 text-[#241E1B]/70 hover:text-[#241E1B] hover:bg-[#FFF8F3]/40 border border-transparent"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Reset</span>
