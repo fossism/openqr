@@ -14,6 +14,49 @@ interface BatchGeneratorProps {
   config: QRDesignConfig;
 }
 
+const makeBatchId = (): string => {
+  try {
+    if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return `batch_${crypto.randomUUID()}`;
+  } catch {
+    // fall through
+  }
+  return `batch_${Date.now().toString(36)}_${Math.floor(Math.random() * 0xffffffff).toString(36)}`;
+};
+
+/**
+ * Split one CSV line into fields, respecting double-quoted sections.
+ * `"a, b",c` -> ["a, b", "c"]; `""` inside quotes is an escaped quote.
+ */
+const splitCsvLine = (line: string): string[] => {
+  const fields: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = false;
+        }
+      } else {
+        current += ch;
+      }
+    } else if (ch === '"') {
+      inQuotes = true;
+    } else if (ch === ',') {
+      fields.push(current);
+      current = '';
+    } else {
+      current += ch;
+    }
+  }
+  fields.push(current);
+  return fields.map((f) => f.trim());
+};
+
 const parseLines = (inputText: string): BatchItem[] => {
   const lines = inputText
     .split('\n')
@@ -21,16 +64,44 @@ const parseLines = (inputText: string): BatchItem[] => {
     .filter(Boolean);
 
   return lines.map((line, idx) => {
-    // Split on last comma so URLs with commas in query still work reasonably;
-    // first token is payload, remainder is label.
-    const sep = line.lastIndexOf(',');
-    const content = (sep >= 0 ? line.slice(0, sep) : line).trim();
-    const label = (sep >= 0 ? line.slice(sep + 1) : '').trim() || `QR_${idx + 1}`;
+    // Prefer pipe delimiter when the line uses it and has no unquoted comma
+    // (handy for payloads that themselves contain commas).
+    let content: string;
+    let label: string;
+    if (line.includes('|') && !splitCsvLine(line).slice(0, -1).join(',').includes(',')) {
+      const pipeIdx = line.indexOf('|');
+      // Only use pipe split when CSV parsing yields a single field.
+      const csvFields = splitCsvLine(line);
+      if (csvFields.length === 1) {
+        content = line.slice(0, pipeIdx).trim();
+        label = line.slice(pipeIdx + 1).trim() || `QR_${idx + 1}`;
+      } else {
+        const fields = csvFields;
+        label = fields.length > 1 ? fields[fields.length - 1] || `QR_${idx + 1}` : `QR_${idx + 1}`;
+        content = fields.length > 1 ? fields.slice(0, -1).join(',').trim() : fields[0].trim();
+      }
+    } else {
+      const fields = splitCsvLine(line);
+      if (fields.length > 1) {
+        // Content is everything but the last field (re-joined), label is last.
+        // Quoted commas stay inside content thanks to splitCsvLine.
+        label = fields[fields.length - 1] || `QR_${idx + 1}`;
+        content = fields.slice(0, -1).join(',').trim();
+      } else {
+        content = fields[0].trim();
+        label = `QR_${idx + 1}`;
+      }
+    }
+    // Strip surrounding quotes left over from `"content","label"` style rows.
+    const unquote = (s: string) =>
+      s.length >= 2 && s.startsWith('"') && s.endsWith('"') ? s.slice(1, -1).replace(/""/g, '"') : s;
+    content = unquote(content).trim();
+    label = unquote(label).trim() || `QR_${idx + 1}`;
     let status: BatchItem['status'] = 'pending';
     if (!content) status = 'error';
     else if (content.length > 2000) status = 'error';
     return {
-      id: `batch_${idx}_${Date.now()}`,
+      id: makeBatchId(),
       content,
       label,
       status,
@@ -212,13 +283,15 @@ https://github.com/fossism/table-3, Table 3`
             rows={5}
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
-            placeholder="https://example.com/item1, Table 1&#10;https://example.com/item2, Table 2"
+            placeholder={'https://example.com/item1, Table 1\n"https://example.com/a,b?x=1", "Label, with comma"\nhttps://example.com/item2 | Table 2'}
             className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#16564F]"
           />
           <p className="text-[11px] text-[#241E1B]/60">
-            Each line represents one QR code. Use comma <code className="text-[#241E1B] font-mono">,</code> to separate URL payload from custom badge text.
+            Each line is one QR. Format: <code className="text-[#241E1B] font-mono">content, label</code> (CSV —
+            quote fields containing commas: <code className="text-[#241E1B] font-mono">"a,b", "Label"</code>) or{' '}
+            <code className="text-[#241E1B] font-mono">content | label</code> when payloads contain commas.
           </p>
-          <div>
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
               onClick={handleParseInput}
@@ -227,6 +300,32 @@ https://github.com/fossism/table-3, Table 3`
               <Eye className="w-3.5 h-3.5 text-[#241E1B]" />
               Preview {inputText.split('\n').filter((l) => l.trim()).length} rows
             </button>
+            <label className="flex items-center gap-1.5 px-3.5 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B] text-xs text-[#241E1B] transition-colors cursor-pointer">
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              Upload CSV / TXT
+              <input
+                type="file"
+                accept=".csv,.txt,text/csv,text/plain"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  if (file.size > 2 * 1024 * 1024) {
+                    setError('CSV exceeds 2MB. Split into smaller batches.');
+                    e.target.value = '';
+                    return;
+                  }
+                  file
+                    .text()
+                    .then((text) => {
+                      setInputText(text.slice(0, 200_000));
+                      setError(null);
+                    })
+                    .catch(() => setError('Could not read that CSV file.'));
+                  e.target.value = '';
+                }}
+              />
+            </label>
           </div>
         </div>
 
