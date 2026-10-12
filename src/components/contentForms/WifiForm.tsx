@@ -26,8 +26,14 @@ export const WifiForm: React.FC<WifiFormProps> = ({ data, onChange }) => {
           value={data.ssid}
           onChange={(e) => updateField('ssid', e.target.value)}
           placeholder="e.g. MyHome_WiFi_5G"
+          aria-invalid={!data.ssid.trim()}
           className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] focus:border-[#241E1B] text-sm transition-all"
         />
+        {!data.ssid.trim() && (
+          <p className="mt-1 text-[11px] text-[#241E1B]/70" role="alert">
+            SSID is required — the QR payload is empty until you enter one.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -68,8 +74,10 @@ export const WifiForm: React.FC<WifiFormProps> = ({ data, onChange }) => {
             aria-label="Encryption Security"
             className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] focus:outline-none focus:ring-2 focus:ring-[#16564F] focus:border-[#241E1B] text-sm transition-all"
           >
-            <option value="WPA">WPA / WPA2 / WPA3 (Default)</option>
-            <option value="WEP">WEP</option>
+            <option value="WPA">WPA / WPA2 / WPA3 Auto (most compatible)</option>
+            <option value="WPA2">WPA2</option>
+            <option value="WPA3">WPA3</option>
+            <option value="WEP">WEP (legacy)</option>
             <option value="nopass">None (Open Network)</option>
           </select>
         </div>

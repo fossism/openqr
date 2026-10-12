@@ -54,10 +54,44 @@ export const CryptoForm: React.FC<CryptoFormProps> = ({ data, onChange }) => {
           type="text"
           value={data.amount}
           onChange={(e) => updateField('amount', e.target.value)}
-          placeholder="0.05"
+          placeholder={data.coin === 'ETH' ? '0.05 (ETH, converted to wei)' : '0.05'}
           className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm font-mono"
         />
+        {data.coin === 'ETH' && (
+          <p className="mt-1 text-[11px] text-[#241E1B]/60">
+            Entered in ETH — encoded as wei per EIP-681.
+          </p>
+        )}
       </div>
+
+      {data.coin === 'UPI' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-[#241E1B] mb-1.5">
+              Payee Name (pn, optional)
+            </label>
+            <input
+              type="text"
+              value={data.upiPayee ?? ''}
+              onChange={(e) => onChange({ ...data, upiPayee: e.target.value })}
+              placeholder="Shop Name"
+              className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-[#241E1B] mb-1.5">
+              Note (tn, optional)
+            </label>
+            <input
+              type="text"
+              value={data.upiNote ?? ''}
+              onChange={(e) => onChange({ ...data, upiNote: e.target.value })}
+              placeholder="Thanks for your purchase"
+              className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-4 py-3 text-[#241E1B] placeholder-[#241E1B]/50 focus:outline-none focus:ring-2 focus:ring-[#16564F] text-sm"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
