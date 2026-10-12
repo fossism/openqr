@@ -25,11 +25,19 @@ const escapeEventField = (str: string = ''): string => {
 };
 
 export const formatWifi = (data: WifiData): string => {
-  const { ssid, password, encryption, hidden } = data;
+  const ssid = (data.ssid ?? '').trim();
+  if (!ssid) return '';
+  const { password, encryption, hidden } = data;
   const escapedSsid = ssid.replace(/([\\;:,"])/g, '\\$1');
-  const escapedPass = password.replace(/([\\;:,"])/g, '\\$1');
+  // T:WPA is the widely-supported token for WPA/WPA2/WPA3 personal.
+  // Emit the specific variant when explicitly chosen, fall back to WPA otherwise.
+  const tValue = encryption === 'nopass' ? 'nopass' : encryption;
+  const escapedPass = (password ?? '').replace(/([\\;:,"])/g, '\\$1');
   const hFlag = hidden ? 'H:true;' : '';
-  return `WIFI:S:${escapedSsid};T:${encryption};P:${escapedPass};${hFlag};`;
+  if (encryption === 'nopass') {
+    return `WIFI:S:${escapedSsid};T:nopass;${hFlag};`;
+  }
+  return `WIFI:S:${escapedSsid};T:${tValue};P:${escapedPass};${hFlag};`;
 };
 
 export const formatVCard = (data: VCardData): string => {
@@ -76,37 +84,101 @@ export const formatWhatsapp = (data: WhatsappData): string => {
   return `https://wa.me/${cleanPhone}?text=${encodedText}`;
 };
 
+/**
+ * Convert a decimal ETH string (e.g. "0.05") to wei as a base-10 integer string.
+ * EIP-681 `ethereum:<addr>?value=` expects wei, not ETH.
+ */
+export const ethToWei = (amount: string): string => {
+  const trimmed = (amount ?? '').trim();
+  if (!trimmed) return '';
+  if (!/^\d+(\.\d+)?$/.test(trimmed)) return '';
+  const [whole, fracRaw = ''] = trimmed.split('.');
+  const frac = (fracRaw + '0'.repeat(18)).slice(0, 18);
+  const combined = `${whole}${frac}`.replace(/^0+(?=\d)/, '');
+  return combined || '0';
+};
+
 export const formatCrypto = (data: CryptoData): string => {
   const { coin, address, amount } = data;
   if (!address) return '';
   const cleanAddress = address.trim();
-  const encodedAmount = amount ? encodeURIComponent(amount.trim()) : '';
+  if (!cleanAddress) return '';
+  const trimmedAmount = (amount ?? '').trim();
 
   switch (coin) {
-    case 'BTC':
+    case 'BTC': {
+      const encodedAmount = trimmedAmount ? encodeURIComponent(trimmedAmount) : '';
       return encodedAmount ? `bitcoin:${cleanAddress}?amount=${encodedAmount}` : `bitcoin:${cleanAddress}`;
-    case 'ETH':
-      return encodedAmount ? `ethereum:${cleanAddress}?value=${encodedAmount}` : `ethereum:${cleanAddress}`;
-    case 'SOL':
+    }
+    case 'ETH': {
+      // UI takes decimal ETH; EIP-681 value is in wei.
+      if (!trimmedAmount) return `ethereum:${cleanAddress}`;
+      const wei = ethToWei(trimmedAmount);
+      return wei ? `ethereum:${cleanAddress}?value=${wei}` : `ethereum:${cleanAddress}`;
+    }
+    case 'SOL': {
+      const encodedAmount = trimmedAmount ? encodeURIComponent(trimmedAmount) : '';
       return encodedAmount ? `solana:${cleanAddress}?amount=${encodedAmount}` : `solana:${cleanAddress}`;
-    case 'UPI':
-      return encodedAmount ? `upi://pay?pa=${cleanAddress}&am=${encodedAmount}` : `upi://pay?pa=${cleanAddress}`;
+    }
+    case 'UPI': {
+      const params = [`pa=${encodeURIComponent(cleanAddress)}`];
+      const payee = (data.upiPayee ?? '').trim();
+      if (payee) params.push(`pn=${encodeURIComponent(payee)}`);
+      if (trimmedAmount) params.push(`am=${encodeURIComponent(trimmedAmount)}`);
+      const note = (data.upiNote ?? '').trim();
+      if (note) params.push(`tn=${encodeURIComponent(note)}`);
+      params.push('cu=INR');
+      return `upi://pay?${params.join('&')}`;
+    }
     default:
       return cleanAddress;
   }
 };
 
+const stableUid = (seed: string): string => {
+  let hash = 5381;
+  for (let i = 0; i < seed.length; i++) {
+    hash = ((hash << 5) + hash + seed.charCodeAt(i)) | 0;
+  }
+  const hex = (hash >>> 0).toString(16).padStart(8, '0');
+  let random = '';
+  try {
+    const c = (globalThis as unknown as { crypto?: Crypto }).crypto;
+    if (c && 'randomUUID' in c && typeof c.randomUUID === 'function') {
+      return `${c.randomUUID()}@openqr`;
+    }
+    if (c && typeof c.getRandomValues === 'function') {
+      const bytes = c.getRandomValues(new Uint8Array(8));
+      random = Array.from(bytes as Uint8Array, (b: number) => b.toString(16).padStart(2, '0')).join('');
+    }
+  } catch {
+    // fall through
+  }
+  if (!random) random = `${Date.now().toString(16)}${Math.floor(Math.random() * 0xffffffff).toString(16)}`;
+  return `${hex}-${random}@openqr`;
+};
+
 export const formatEvent = (data: EventData): string => {
+  const floating = data.floatingTime === true;
   const formatDate = (dtStr: string) => {
     if (!dtStr) return '';
     const date = new Date(dtStr);
     if (isNaN(date.getTime())) return '';
+    if (floating) {
+      // Floating local time: YYYYMMDDTHHMMSS with no Z suffix, no UTC shift.
+      const m = /^(\d{4})-(\d{2})-(\d{2})[T ](\d{2}):(\d{2})(?::(\d{2}))?/.exec(dtStr);
+      if (m) {
+        const [, y, mo, d, h, mi, s = '00'] = m;
+        return `${y}${mo}${d}T${h}${mi}${s}`;
+      }
+    }
     return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
   };
 
+  const uidSeed = `${data.title}|${data.startDate}|${data.endDate}|${data.location}`;
   const eventLines = [
     'BEGIN:VEVENT',
-    `UID:${Date.now()}@openqr`,
+    `UID:${stableUid(uidSeed)}`,
     `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, '').split('.')[0]}Z`,
     `SUMMARY:${escapeEventField(data.title)}`,
   ];
