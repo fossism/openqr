@@ -263,6 +263,11 @@ export const mergeQRConfig = (saved: Partial<QRDesignConfig>): QRDesignConfig =>
     logo: { ...DEFAULT_QR_CONFIG.logo, ...(saved.logo ?? {}) },
     frame: { ...DEFAULT_QR_CONFIG.frame, ...(saved.frame ?? {}) },
   };
+  // Never trust a persisted baked bitmap as a re-bake source: if only `src`
+  // survived storage, treat it as the original once, then re-bake cleanly.
+  if (merged.logo.src && !merged.logo.originalSrc) {
+    merged.logo.originalSrc = merged.logo.src;
+  }
   // Migrate old default (white-circle) to new default sharp square.
   if ((saved.logo?.backgroundType as string) === 'white-circle' && !saved.logo?.src) {
     merged.logo.backgroundType = 'white-square';

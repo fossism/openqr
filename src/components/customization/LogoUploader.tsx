@@ -20,9 +20,18 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [isDragging, setIsDragging] = useState(false);
   // Original unbaked source — baking always starts from here to avoid stacking padding.
-  const rawSrcRef = React.useRef<string>(logo.src);
+  // Prefer the explicit originalSrc field; fall back to the legacy ref for sessions
+  // created before originalSrc existed.
+  const rawSrcRef = React.useRef<string>(logo.originalSrc || logo.src);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const bakeIdRef = React.useRef(0);
+
+  // Keep the ref in sync when the logo is restored from storage / theme import.
+  React.useEffect(() => {
+    if (logo.originalSrc) rawSrcRef.current = logo.originalSrc;
+    else if (logo.src && !rawSrcRef.current) rawSrcRef.current = logo.src;
+    if (!logo.src && !logo.originalSrc) rawSrcRef.current = '';
+  }, [logo.originalSrc, logo.src]);
 
   // Show preview first (instant), then swap in the baked sharp-square version for the QR.
   const applyLogo = async (src: string, base: LogoConfig = logo) => {
@@ -32,15 +41,16 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
         ? base
         : { ...base, backgroundType: 'white-square' as const };
     rawSrcRef.current = src;
+    const withOriginal: LogoConfig = { ...withSquare, originalSrc: src, src };
     // Preview first: show raw immediately so thumbnail + QR update without waiting.
-    onLogoChange({ ...withSquare, src });
+    onLogoChange(withOriginal);
     if (errorCorrectionLevel !== 'H') onEccChange('H');
     const bakeId = ++bakeIdRef.current;
     const baked = await bakeLogoWithBackground(src, withSquare.backgroundType, withSquare.backgroundColor);
     // Ignore stale bakes if user picked another logo meanwhile.
     if (bakeId !== bakeIdRef.current) return;
     if (baked !== src) {
-      onLogoChange({ ...withSquare, src: baked });
+      onLogoChange({ ...withOriginal, src: baked });
     }
   };
 
@@ -77,22 +87,22 @@ export const LogoUploader: React.FC<LogoUploaderProps> = ({
   const removeLogo = () => {
     rawSrcRef.current = '';
     bakeIdRef.current += 1;
-    onLogoChange({ ...logo, src: '' });
+    onLogoChange({ ...logo, src: '', originalSrc: '' });
   };
 
   const changeBackground = async (key: 'backgroundType' | 'backgroundColor', val: string) => {
     const next = { ...logo, [key]: val };
     // Always re-bake from the original source so padding doesn't stack.
-    const source = rawSrcRef.current || logo.src;
+    const source = logo.originalSrc || rawSrcRef.current || logo.src;
     if (!source) {
       onLogoChange(next);
       return;
     }
-    if (!rawSrcRef.current) {
-      rawSrcRef.current = source;
-    }
+    rawSrcRef.current = logo.originalSrc || source;
+    // Preserve originalSrc across background changes.
+    const withOriginal: LogoConfig = { ...next, originalSrc: rawSrcRef.current };
     const baked = await bakeLogoWithBackground(source, next.backgroundType, next.backgroundColor);
-    onLogoChange({ ...next, src: baked });
+    onLogoChange({ ...withOriginal, src: baked });
   };
 
   return (
