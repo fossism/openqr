@@ -31,7 +31,8 @@ export interface GradientOptions {
 }
 
 export interface LogoConfig {
-  src: string; // Base64 data URL or SVG preset
+  src: string; // Baked data URL actually rendered (may include background padding)
+  originalSrc?: string; // Raw unbaked upload / preset — the only safe re-bake source
   scale: number; // 0.1 to 0.4
   margin: number; // margin around logo in px
   backgroundType: 'none' | 'white-circle' | 'white-square' | 'custom-circle';
@@ -72,10 +73,12 @@ export interface QRDesignConfig {
 }
 
 // Preset content form interfaces
+export type WifiEncryption = 'WPA' | 'WPA2' | 'WPA3' | 'WEP' | 'nopass';
+
 export interface WifiData {
   ssid: string;
   password: string;
-  encryption: 'WPA' | 'WEP' | 'nopass';
+  encryption: WifiEncryption;
   hidden: boolean;
 }
 
@@ -112,6 +115,10 @@ export interface CryptoData {
   coin: 'BTC' | 'ETH' | 'SOL' | 'UPI';
   address: string;
   amount: string;
+  /** UPI-only: payee display name (pn) */
+  upiPayee?: string;
+  /** UPI-only: transaction note (tn) */
+  upiNote?: string;
 }
 
 export interface EventData {
@@ -120,6 +127,8 @@ export interface EventData {
   description: string;
   startDate: string;
   endDate: string;
+  /** When true, emit floating local time (no Z / no UTC conversion). */
+  floatingTime?: boolean;
 }
 
 export interface PresetTheme {
