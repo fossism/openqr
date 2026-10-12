@@ -69,15 +69,20 @@ import { CryptoForm } from './components/contentForms/CryptoForm';
 import { EventForm } from './components/contentForms/EventForm';
 
 const STORAGE_KEY_CONFIG = 'openqr_saved_config_v1';
-const STORAGE_KEY_HISTORY = 'openqr_history_v1';
+const STORAGE_KEY_HISTORY = 'openqr_history_v2';
+const HISTORY_LIMIT = 20;
 
 interface HistoryEntry {
   id: string;
   timestamp: number;
   contentType: ContentType;
+  /** First 80 chars of the rendered payload, for the chip label. */
   preview: string;
-  urlInput: string;
-  rawText: string;
+  /** Full payload at capture time (capped). */
+  payload: string;
+  /** Stripped design config (no logo bitmap). */
+  config: Partial<QRDesignConfig>;
+  forms: ShareForms;
 }
 
 interface ShareForms {
@@ -349,11 +354,37 @@ export function App() {
     };
   }, []);
 
-  // History
+  // History (v2: full snapshot per content type; migrates v1 url/text entries)
   const [history, setHistory] = useState<HistoryEntry[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_HISTORY);
-      return saved ? (JSON.parse(saved) as HistoryEntry[]) : [];
+      if (saved) return JSON.parse(saved) as HistoryEntry[];
+      const legacy = localStorage.getItem('openqr_history_v1');
+      if (!legacy) return [];
+      const old = JSON.parse(legacy) as Array<{
+        id: string;
+        timestamp: number;
+        contentType: ContentType;
+        preview: string;
+        urlInput: string;
+        rawText: string;
+      }>;
+      return old.map((h) => ({
+        ...h,
+        payload: h.preview,
+        config: {},
+        forms: {
+          urlInput: h.urlInput ?? '',
+          wifiData: { ssid: '', password: '', encryption: 'WPA', hidden: false },
+          vcardData: { firstName: '', lastName: '', organization: '', title: '', phone: '', email: '', website: '', street: '', city: '', country: '' },
+          emailData: { email: '', subject: '', body: '' },
+          smsData: { phone: '', message: '' },
+          whatsappData: { phone: '', message: '' },
+          cryptoData: { coin: 'BTC', address: '', amount: '' },
+          eventData: { title: '', location: '', description: '', startDate: '', endDate: '' },
+          rawText: h.rawText ?? '',
+        } as ShareForms,
+      }));
     } catch {
       return [];
     }
@@ -422,33 +453,50 @@ export function App() {
     rawText,
   ]);
 
-  // Debounced history tracking (url/text only for reliable restore)
+  // Debounced history tracking: full snapshot (payload + design + all forms)
+  // for every content type so any entry restores exactly.
   useEffect(() => {
-    if (activeContentType !== 'url' && activeContentType !== 'text') return;
     const preview = payloadText.slice(0, 80);
     if (!preview) return;
     const timer = setTimeout(() => {
+      const forms: ShareForms = {
+        urlInput,
+        wifiData,
+        vcardData,
+        emailData,
+        smsData,
+        whatsappData,
+        cryptoData,
+        eventData,
+        rawText,
+      };
+      const snapConfig = stripLogoBitmap(config);
+      // Logo excluded from history (bitmap would blow up localStorage).
+      const entry: HistoryEntry = {
+        id:
+          typeof crypto !== 'undefined' && 'randomUUID' in crypto
+            ? (crypto as Crypto).randomUUID()
+            : `${Date.now()}-${Math.floor(Math.random() * 0xffffffff).toString(36)}`,
+        timestamp: Date.now(),
+        contentType: activeContentType,
+        preview,
+        payload: payloadText.slice(0, 2000),
+        config: snapConfig,
+        forms,
+      };
       setHistory((prev) => {
-        if (prev[0]?.preview === preview && prev[0]?.contentType === activeContentType) return prev;
-        const entry: HistoryEntry = {
-          id: `${Date.now()}`,
-          timestamp: Date.now(),
-          contentType: activeContentType,
-          preview,
-          urlInput,
-          rawText,
-        };
-        const next = [entry, ...prev].slice(0, 8);
+        if (prev[0]?.payload === entry.payload && prev[0]?.contentType === entry.contentType) return prev;
+        const next = [entry, ...prev].slice(0, HISTORY_LIMIT);
         try {
           localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(next));
         } catch {
-          // ignore
+          // ignore quota
         }
         return next;
       });
     }, 1500);
     return () => clearTimeout(timer);
-  }, [payloadText, activeContentType, urlInput, rawText]);
+  }, [payloadText, activeContentType, urlInput, wifiData, vcardData, emailData, smsData, whatsappData, cryptoData, eventData, rawText, config]);
 
   const updateConfigField = (key: string, value: unknown) => {
     setConfig((prev) => ({
@@ -530,9 +578,35 @@ export function App() {
 
   const restoreHistoryEntry = (entry: HistoryEntry) => {
     setActiveContentType(entry.contentType);
-    setUrlInput(entry.urlInput);
-    setRawText(entry.rawText);
+    setUrlInput(entry.forms.urlInput);
+    setWifiData(entry.forms.wifiData);
+    setVcardData(entry.forms.vcardData);
+    setEmailData(entry.forms.emailData);
+    setSmsData(entry.forms.smsData);
+    setWhatsappData(entry.forms.whatsappData);
+    setCryptoData(entry.forms.cryptoData);
+    setEventData(entry.forms.eventData);
+    setRawText(entry.forms.rawText);
+    try {
+      if (entry.config && Object.keys(entry.config).length > 0) {
+        setConfig(mergeQRConfig(entry.config));
+      }
+    } catch {
+      // keep current design on corrupt snapshot
+    }
     setActiveCustomTab('content');
+  };
+
+  const deleteHistoryEntry = (id: string) => {
+    setHistory((prev) => {
+      const next = prev.filter((h) => h.id !== id);
+      try {
+        localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(next));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
   };
 
   const contentTypes: { id: ContentType; label: string; icon: ReactNode }[] = [
@@ -716,7 +790,7 @@ export function App() {
             <div className="p-4 rounded-none bg-[#FFF8F3] border border-[#241E1B] space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-xs font-semibold text-[#241E1B] flex items-center gap-1.5">
-                  <History className="w-3.5 h-3.5 text-[#241E1B]/70" /> Recent (this browser)
+                  <History className="w-3.5 h-3.5 text-[#241E1B]/70" /> Recent ({history.length} in this browser)
                 </p>
                 <button
                   type="button"
@@ -734,18 +808,34 @@ export function App() {
                 </button>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                {history.slice(0, 6).map((h) => (
-                  <button
+                {history.slice(0, 10).map((h) => (
+                  <span
                     key={h.id}
-                    type="button"
-                    onClick={() => restoreHistoryEntry(h)}
-                    title={`${h.contentType}: ${h.preview}`}
-                    className="max-w-[220px] truncate px-2.5 py-1.5 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-[11px] font-mono text-[#241E1B] transition-colors"
+                    className="group flex items-center max-w-[260px] rounded-none bg-[#FFF8F3] border border-[#241E1B]/30 hover:border-[#241E1B] transition-colors"
                   >
-                    {h.preview}
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => restoreHistoryEntry(h)}
+                      title={`${h.contentType} · ${new Date(h.timestamp).toLocaleString()} · restores payload + design\n${h.preview}`}
+                      className="flex items-center gap-1.5 min-w-0 px-2.5 py-1.5 text-[11px] font-mono text-[#241E1B] hover:bg-[#16564F] hover:text-[#FFF8F3] transition-colors"
+                    >
+                      <span className="shrink-0 px-1 py-0.5 bg-[#241E1B] text-[#E8B84B] text-[9px] font-bold uppercase">
+                        {h.contentType}
+                      </span>
+                      <span className="truncate">{h.preview}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => deleteHistoryEntry(h.id)}
+                      aria-label={`Delete history entry ${h.preview}`}
+                      className="shrink-0 px-1.5 py-1.5 text-[#241E1B]/40 hover:text-[#241E1B] hover:bg-[#241E1B]/10 transition-colors"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </span>
                 ))}
               </div>
+              <p className="text-[10px] text-[#241E1B]/50">Restores payload, design and all form fields. Logo image excluded.</p>
             </div>
           )}
         </div>
