@@ -7,7 +7,7 @@ import {
   copyCanvasToClipboard,
   exportConfigJson,
   parseConfigJson,
-  encodeShareData,
+  encodeShareDataCompressed,
   triggerConfetti,
 } from '../../utils/exportUtils';
 import { mergeQRConfig } from '../../utils/qrGenerator';
@@ -39,6 +39,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
   const [busy, setBusy] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const flash = (msg: string) => {
@@ -77,7 +78,9 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
     const blob = await getSvgBlob();
     if (blob) {
       downloadSvgBlob(blob, filename || 'openqr-vector');
-      if (config.frame.style !== 'none') flash('Note: SVG is frameless vector. Use PNG/PDF to keep the frame.');
+      if (config.frame.style !== 'none') {
+        flash('SVG exported as frameless vector (frames only bake into PNG / WEBP / PDF). Use PNG to keep the frame.');
+      }
     } else {
       const canvas = getCanvasRef();
       if (canvas) exportCanvasImage(canvas, filename || 'openqr-code', 'png');
@@ -103,12 +106,18 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
 
   const handleShareLink = async () => {
     try {
-      const encoded = encodeShareData(getShareData());
+      const encoded = await encodeShareDataCompressed(getShareData());
       const url = `${window.location.origin}${window.location.pathname}#qr=${encoded}`;
-      await navigator.clipboard.writeText(url);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 2000);
-      flash('Share link copied (logo image excluded for URL size).');
+      setShareUrl(url);
+      try {
+        await navigator.clipboard.writeText(url);
+        setCopiedLink(true);
+        setTimeout(() => setCopiedLink(false), 2000);
+        flash(`Share link copied (${url.length} chars, compressed. Logo image excluded for URL size).`);
+      } catch {
+        // Clipboard blocked (permissions / non-secure context) — show manual copy box.
+        flash('Clipboard blocked — copy the share link below manually.');
+      }
     } catch {
       flash('Could not build share link.');
     }
@@ -173,7 +182,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
 
       {config.frame.style !== 'none' && (
         <p className="text-[11px] text-[#241E1B]/70 bg-[#FFF8F3] border border-[#241E1B]/30 rounded-none px-3 py-2">
-          Frame is baked into PNG / WEBP / PDF. SVG export is frameless vector.
+          Frame is baked into PNG / WEBP / high-res-PNG PDF. SVG export is frameless vector by design.
         </p>
       )}
 
@@ -195,17 +204,18 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
           {btnBusy('svg') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4 text-[#241E1B]" />}
-          Vector SVG
+          SVG (frameless)
         </button>
 
         <button
           type="button"
           onClick={handleExportPDF}
           disabled={!!busy}
+          title="PDF embeds a high-resolution PNG snapshot (not infinite vector). Use SVG for true vector."
           className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
           {btnBusy('pdf') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4 text-[#241E1B]" />}
-          Print PDF
+          PDF (hi-res PNG)
         </button>
 
         <button
@@ -272,6 +282,23 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           Batch mode
         </button>
       </div>
+
+      {shareUrl && (
+        <div className="space-y-1.5">
+          <label htmlFor="share-url-fallback" className="block text-xs font-medium text-[#241E1B]">
+            Share URL ({shareUrl.length} chars — copy manually if clipboard was blocked)
+          </label>
+          <textarea
+            id="share-url-fallback"
+            readOnly
+            rows={3}
+            value={shareUrl}
+            onFocus={(e) => e.target.select()}
+            onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+            className="w-full bg-[#FFF8F3] border border-[#241E1B] rounded-none px-3 py-2 text-[11px] font-mono text-[#241E1B] break-all focus:outline-none focus:ring-2 focus:ring-[#16564F]"
+          />
+        </div>
+      )}
 
       {notice && (
         <p className="text-xs text-[#241E1B] bg-[#241E1B]/5 border border-[#241E1B]/30 rounded-none px-3 py-2" role="status">
