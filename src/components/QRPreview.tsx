@@ -8,6 +8,8 @@ import { verifyQRScannability } from '../utils/qrScanner';
 import type { ScanVerificationResult } from '../utils/qrScanner';
 import { copyCanvasToClipboard } from '../utils/exportUtils';
 import { ScannabilityIndicator } from './ScannabilityIndicator';
+import { PayloadInsights } from './PayloadInsights';
+import type { ErrorCorrectionLevel } from '../types/qr';
 
 export interface QRPreviewHandle {
   getCanvas: () => HTMLCanvasElement | null;
@@ -20,10 +22,11 @@ interface QRPreviewProps {
   config: QRDesignConfig;
   payloadText: string;
   exportPanel?: ReactNode;
+  onEccChange?: (level: ErrorCorrectionLevel) => void;
 }
 
 export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
-  ({ config, payloadText, exportPanel }, ref) => {
+  ({ config, payloadText, exportPanel, onEccChange }, ref) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const finalCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const [copied, setCopied] = useState(false);
@@ -119,8 +122,13 @@ export const QRPreview = forwardRef<QRPreviewHandle, QRPreviewProps>(
     return (
       <div className="flex flex-col items-center justify-between h-full space-y-5">
         {/* Scannability Verification Badge */}
-        <div className="w-full">
+        <div className="w-full space-y-3">
           <ScannabilityIndicator result={scanResult} isScanning={isScanning} />
+          <PayloadInsights
+            payloadText={payloadText}
+            errorCorrectionLevel={config.errorCorrectionLevel}
+            onEccChange={onEccChange}
+          />
         </div>
 
         {/* QR Code Canvas Display Box */}

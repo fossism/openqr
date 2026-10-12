@@ -848,6 +848,7 @@ export function App() {
                 ref={previewRef}
                 config={config}
                 payloadText={payloadText}
+                onEccChange={(ecc) => updateConfigField('errorCorrectionLevel', ecc)}
                 exportPanel={
                   <ExportPanel
                     getCanvasRef={() => previewRef.current?.getCanvas() || null}
