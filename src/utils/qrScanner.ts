@@ -32,9 +32,79 @@ export const getContrastRatio = (hex1: string, hex2: string): number => {
 };
 
 /**
- * Validates whether a rendered canvas containing a QR code is scannable
- * and matches the expected payload text.
+ * Native BarcodeDetector is still behind a flag in some browsers and missing
+ * from TS libs — declare the minimal surface we use.
  */
+interface NativeDetectedBarcode {
+  rawValue?: string;
+}
+
+interface NativeBarcodeDetectorInstance {
+  detect(source: CanvasImageSource): Promise<NativeDetectedBarcode[]>;
+}
+
+type NativeBarcodeDetectorCtor = new (options?: { formats?: string[] }) => NativeBarcodeDetectorInstance;
+
+const getBarcodeDetectorCtor = (): NativeBarcodeDetectorCtor | null => {
+  try {
+    const ctor = (window as unknown as { BarcodeDetector?: NativeBarcodeDetectorCtor }).BarcodeDetector;
+    return typeof ctor === 'function' ? ctor : null;
+  } catch {
+    return null;
+  }
+};
+
+export const supportsLiveScan = (): boolean => {
+  try {
+    return !!navigator.mediaDevices?.getUserMedia;
+  } catch {
+    return false;
+  }
+};
+
+export const liveScanErrorMessage = (err: unknown): string => {
+  const name = (err as { name?: string } | null)?.name ?? '';
+  if (name === 'NotAllowedError' || name === 'SecurityError') {
+    return 'Camera blocked. Allow camera access in the browser site settings, then try again.';
+  }
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
+    return 'No camera found. Use the upload tab instead.';
+  }
+  if (name === 'NotReadableError') {
+    return 'Camera is busy in another app. Close it and try again.';
+  }
+  return 'Could not start the camera. Use the upload tab instead.';
+};
+
+/**
+ * Decode one video frame: native BarcodeDetector first (fast path),
+ * jsQR on the same pixels as fallback. Returns payload or null.
+ */
+export const detectFramePayload = async (
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number
+): Promise<string | null> => {
+  const ctor = getBarcodeDetectorCtor();
+  if (ctor) {
+    try {
+      const detector = new ctor({ formats: ['qr_code'] });
+      const found = await detector.detect(canvas);
+      const value = found?.[0]?.rawValue;
+      if (value) return value;
+    } catch {
+      // Fall through to jsQR — detector may reject oversized frames.
+    }
+  }
+  try {
+    const imageData = ctx.getImageData(0, 0, width, height);
+    const code = jsQR(imageData.data, width, height, { inversionAttempts: 'attemptBoth' });
+    return code?.data ?? null;
+  } catch {
+    return null;
+  }
+};
 export const verifyQRScannability = (
   canvas: HTMLCanvasElement,
   expectedText: string
