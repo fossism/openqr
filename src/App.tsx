@@ -45,6 +45,8 @@ import {
   normalizeUrl,
 } from './utils/formatters';
 import { mergeQRConfig } from './utils/qrGenerator';
+import { decodeShareDataSync, decodeShareData } from './utils/exportUtils';
+import { loadStoredLogo, saveStoredLogo, clearStoredLogo } from './utils/logoStorage';
 
 import { Header } from './components/Header';
 import { QRPreview } from './components/QRPreview';
@@ -90,6 +92,14 @@ interface ShareForms {
   rawText: string;
 }
 
+interface ShareDataV3 {
+  v: 3;
+  config: Partial<QRDesignConfig>;
+  contentType: ContentType;
+  /** Only the active content type's form is included to keep URLs short. */
+  forms: Partial<ShareForms>;
+}
+
 interface ShareDataV2 {
   v: 2;
   config: Partial<QRDesignConfig>;
@@ -103,15 +113,21 @@ interface ShareDataV1 {
   payload: string;
 }
 
-const decodeShareHash = (): ShareDataV2 | ShareDataV1 | null => {
+type AnyShareData = ShareDataV3 | ShareDataV2 | ShareDataV1;
+
+const stripLogoBitmap = (config: QRDesignConfig): QRDesignConfig => ({
+  ...config,
+  logo: { ...config.logo, src: '', originalSrc: '' },
+});
+
+const decodeShareHashSync = (): AnyShareData | null => {
   try {
     const hash = window.location.hash;
     if (!hash.startsWith('#qr=')) return null;
     const encoded = hash.slice(4);
-    const bin = atob(encoded);
-    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
-    const json = new TextDecoder().decode(bytes);
-    const parsed = JSON.parse(json) as ShareDataV2 | ShareDataV1;
+    // lz: payloads need async decompression — handled in the mount effect.
+    if (encoded.startsWith('lz:')) return null;
+    const parsed = decodeShareDataSync(encoded) as AnyShareData | null;
     if (!parsed || typeof parsed !== 'object') return null;
     return parsed;
   } catch {
@@ -119,15 +135,46 @@ const decodeShareHash = (): ShareDataV2 | ShareDataV1 | null => {
   }
 };
 
-// Backwards-compatible parser: v2 carries full form state, v1 only a payload string.
+const decodeShareHash = decodeShareHashSync;
+
+// Backwards-compatible parser: v3/v2 carry form state, v1 only a payload string.
 const parseShareHash = (): { config: Partial<QRDesignConfig>; payload: string } | null => {
   const parsed = decodeShareHash();
   if (!parsed) return null;
-  if ((parsed as ShareDataV2).v === 2) {
-    return { config: (parsed as ShareDataV2).config ?? {}, payload: '' };
+  if ((parsed as ShareDataV3).v === 3 || (parsed as ShareDataV2).v === 2) {
+    return { config: (parsed as ShareDataV3).config ?? {}, payload: '' };
   }
   const v1 = parsed as ShareDataV1;
   return { config: v1.config ?? {}, payload: v1.payload ?? '' };
+};
+
+const applyShareForms = (
+  shared: ShareDataV3 | ShareDataV2,
+  setters: {
+    setActiveContentType: (c: ContentType) => void;
+    setUrlInput: (s: string) => void;
+    setWifiData: (d: WifiData) => void;
+    setVcardData: (d: VCardData) => void;
+    setEmailData: (d: EmailData) => void;
+    setSmsData: (d: SmsData) => void;
+    setWhatsappData: (d: WhatsappData) => void;
+    setCryptoData: (d: CryptoData) => void;
+    setEventData: (d: EventData) => void;
+    setRawText: (s: string) => void;
+  }
+) => {
+  const forms = (shared as ShareDataV3).forms as Partial<ShareForms> | undefined;
+  if (!forms) return;
+  setters.setActiveContentType(shared.contentType);
+  if (forms.urlInput !== undefined) setters.setUrlInput(forms.urlInput);
+  if (forms.wifiData !== undefined) setters.setWifiData(forms.wifiData);
+  if (forms.vcardData !== undefined) setters.setVcardData(forms.vcardData);
+  if (forms.emailData !== undefined) setters.setEmailData(forms.emailData);
+  if (forms.smsData !== undefined) setters.setSmsData(forms.smsData);
+  if (forms.whatsappData !== undefined) setters.setWhatsappData(forms.whatsappData);
+  if (forms.cryptoData !== undefined) setters.setCryptoData(forms.cryptoData);
+  if (forms.eventData !== undefined) setters.setEventData(forms.eventData);
+  if (forms.rawText !== undefined) setters.setRawText(forms.rawText);
 };
 
 export function App() {
@@ -205,39 +252,101 @@ export function App() {
     return DEFAULT_QR_CONFIG;
   });
 
-  // Apply shared state once on mount (v2 restores full forms, v1 sniffs the payload)
+  // Apply shared state once on mount (v3/v2 restore forms, v1 sniffs the payload).
+  // Handles both legacy base64 and compressed lz: hashes, plus IDB logo restore.
   useEffect(() => {
-    const shared = decodeShareHash();
-    if (!shared) return;
-    if ((shared as ShareDataV2).v === 2 && (shared as ShareDataV2).forms) {
-      const v2 = shared as ShareDataV2;
-      setActiveContentType(v2.contentType);
-      setUrlInput(v2.forms.urlInput);
-      setWifiData(v2.forms.wifiData);
-      setVcardData(v2.forms.vcardData);
-      setEmailData(v2.forms.emailData);
-      setSmsData(v2.forms.smsData);
-      setWhatsappData(v2.forms.whatsappData);
-      setCryptoData(v2.forms.cryptoData);
-      setEventData(v2.forms.eventData);
-      setRawText(v2.forms.rawText);
-    } else {
-      const payload = (shared as ShareDataV1).payload;
-      if (!payload) {
-        window.history.replaceState(null, '', window.location.pathname);
-        return;
-      }
-      if (/^https?:\/\//i.test(payload) && payload.length < 500) {
-        setUrlInput(payload);
-        setActiveContentType('url');
+    let cancelled = false;
+    const applySyncShare = () => {
+      const shared = decodeShareHashSync();
+      if (!shared) return false;
+      if ((shared as ShareDataV3).v === 3 || (shared as ShareDataV2).v === 2) {
+        applyShareForms(shared as ShareDataV3, {
+          setActiveContentType,
+          setUrlInput,
+          setWifiData,
+          setVcardData,
+          setEmailData,
+          setSmsData,
+          setWhatsappData,
+          setCryptoData,
+          setEventData,
+          setRawText,
+        });
       } else {
-        setRawText(payload);
-        setActiveContentType('text');
+        const payload = (shared as ShareDataV1).payload;
+        if (!payload) {
+          window.history.replaceState(null, '', window.location.pathname);
+          return true;
+        }
+        if (/^https?:\/\//i.test(payload) && payload.length < 500) {
+          setUrlInput(payload);
+          setActiveContentType('url');
+        } else {
+          setRawText(payload);
+          setActiveContentType('text');
+        }
       }
-    }
-    setActiveCustomTab('content');
-    // Clear hash so refresh doesn't re-apply
-    window.history.replaceState(null, '', window.location.pathname);
+      setActiveCustomTab('content');
+      window.history.replaceState(null, '', window.location.pathname);
+      return true;
+    };
+
+    const syncApplied = applySyncShare();
+
+    const applyAsyncShare = async () => {
+      try {
+        const hash = window.location.hash;
+        if (!hash.startsWith('#qr=')) return;
+        const encoded = hash.slice(4);
+        if (!encoded.startsWith('lz:')) {
+          if (syncApplied) return;
+          return;
+        }
+        const parsed = (await decodeShareData(encoded)) as AnyShareData | null;
+        if (!parsed || cancelled) return;
+        if ((parsed as ShareDataV3).v === 3 || (parsed as ShareDataV2).v === 2) {
+          const v = parsed as ShareDataV3;
+          // Config was already applied synchronously from storage; re-merge shared config.
+          try {
+            if (v.config) setConfig(mergeQRConfig(v.config));
+          } catch {
+            // ignore
+          }
+          applyShareForms(v, {
+            setActiveContentType,
+            setUrlInput,
+            setWifiData,
+            setVcardData,
+            setEmailData,
+            setSmsData,
+            setWhatsappData,
+            setCryptoData,
+            setEventData,
+            setRawText,
+          });
+          setActiveCustomTab('content');
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      } catch {
+        // ignore malformed share links
+      }
+    };
+    void applyAsyncShare();
+
+    // Restore large logo bitmap from IndexedDB (kept out of localStorage to avoid quota).
+    loadStoredLogo()
+      .then((src) => {
+        if (!src || cancelled) return;
+        setConfig((prev) => {
+          if (prev.logo.originalSrc || prev.logo.src) return prev;
+          return { ...prev, logo: { ...prev.logo, originalSrc: src, src } };
+        });
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // History
@@ -258,12 +367,19 @@ export function App() {
   // Ref to QRPreview instance
   const previewRef = useRef<QRPreviewHandle>(null);
 
-  // Persist design config changes to LocalStorage
+  // Persist design config changes to LocalStorage (logo bitmap excluded to avoid quota).
+  // The original logo is stored separately in IndexedDB.
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(config));
+      localStorage.setItem(STORAGE_KEY_CONFIG, JSON.stringify(stripLogoBitmap(config)));
     } catch {
-      // Ignore in private window
+      // Ignore in private window / quota errors
+    }
+    const original = config.logo.originalSrc || '';
+    if (original) {
+      void saveStoredLogo(original);
+    } else if (!config.logo.src) {
+      void clearStoredLogo();
     }
   }, [config]);
 
@@ -276,7 +392,7 @@ export function App() {
         return normalizeUrl(trimmed);
       }
       case 'wifi':
-        return formatWifi(wifiData);
+        return formatWifi(wifiData) || 'https://github.com/fossism';
       case 'vcard':
         return formatVCard(vcardData);
       case 'email':
@@ -357,24 +473,46 @@ export function App() {
     setConfig(DEFAULT_QR_CONFIG);
   };
 
-  const buildShareData = (): ShareDataV2 => {
+  const buildShareData = (): ShareDataV3 => {
     // Logo bitmap excluded: base64 art would blow up URL length.
-    const shareable = { ...config, logo: { ...config.logo, src: '' } };
+    // Only the active form is included (v3) to keep share URLs short.
+    const shareable = stripLogoBitmap(config);
+    const forms: Partial<ShareForms> = {};
+    switch (activeContentType) {
+      case 'url':
+        forms.urlInput = urlInput.slice(0, 2000);
+        break;
+      case 'wifi':
+        forms.wifiData = wifiData;
+        break;
+      case 'vcard':
+        forms.vcardData = vcardData;
+        break;
+      case 'email':
+        forms.emailData = emailData;
+        break;
+      case 'sms':
+        forms.smsData = smsData;
+        break;
+      case 'whatsapp':
+        forms.whatsappData = whatsappData;
+        break;
+      case 'crypto':
+        forms.cryptoData = cryptoData;
+        break;
+      case 'event':
+        forms.eventData = eventData;
+        break;
+      case 'text':
+      default:
+        forms.rawText = rawText.slice(0, 2000);
+        break;
+    }
     return {
-      v: 2,
+      v: 3,
       config: shareable,
       contentType: activeContentType,
-      forms: {
-        urlInput: urlInput.slice(0, 2000),
-        wifiData,
-        vcardData,
-        emailData,
-        smsData,
-        whatsappData,
-        cryptoData,
-        eventData,
-        rawText: rawText.slice(0, 2000),
-      },
+      forms,
     };
   };
 
