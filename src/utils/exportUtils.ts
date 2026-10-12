@@ -68,7 +68,9 @@ export const exportSvgFile = (svgElement: SVGElement, filename: string = 'openqr
 };
 
 /**
- * Exports Canvas QR code to printable vector/high-res PDF document
+ * Exports Canvas QR code to a print-friendly PDF document.
+ * NOTE: this embeds a high-resolution PNG snapshot (not infinite vector).
+ * Use SVG export when you need true vector.
  */
 export const exportPdfDocument = (
   canvas: HTMLCanvasElement,
@@ -157,11 +159,70 @@ export const parseConfigJson = async (file: File): Promise<unknown> => {
 };
 
 export const encodeShareData = (data: unknown): string => {
+  // lz-string is loaded lazily to keep the initial bundle small.
+  // Fallback to plain base64 if the import fails (e.g. offline mid-update).
+  // NOTE: this sync wrapper is kept for backwards compat; prefer encodeShareDataAsync.
   const json = JSON.stringify(data);
   const bytes = new TextEncoder().encode(json);
   let bin = '';
   bytes.forEach((b) => {
     bin += String.fromCharCode(b);
   });
-  return btoa(bin);
+  return `b64:${btoa(bin)}`;
+};
+
+export const encodeShareDataCompressed = async (data: unknown): Promise<string> => {
+  const json = JSON.stringify(data);
+  try {
+    const mod = (await import('lz-string')) as unknown as Record<string, unknown> & {
+      compressToEncodedURIComponent?: (s: string) => string;
+    };
+    const fn =
+      mod.compressToEncodedURIComponent ??
+      (mod.default as { compressToEncodedURIComponent?: (s: string) => string } | undefined)
+        ?.compressToEncodedURIComponent;
+    if (typeof fn === 'function') return `lz:${fn.call(mod, json)}`;
+    return encodeShareData(data);
+  } catch {
+    return encodeShareData(data);
+  }
+};
+
+export const decodeShareData = async (encoded: string): Promise<unknown | null> => {
+  try {
+    if (encoded.startsWith('lz:')) {
+      const mod = (await import('lz-string')) as unknown as Record<string, unknown> & {
+        decompressFromEncodedURIComponent?: (s: string) => string | null;
+      };
+      const fn =
+        mod.decompressFromEncodedURIComponent ??
+        (mod.default as { decompressFromEncodedURIComponent?: (s: string) => string | null } | undefined)
+          ?.decompressFromEncodedURIComponent;
+      if (typeof fn !== 'function') return null;
+      const json = fn.call(mod, encoded.slice(3));
+      if (!json) return null;
+      return JSON.parse(json);
+    }
+    const raw = encoded.startsWith('b64:') ? encoded.slice(4) : encoded;
+    const bin = atob(raw);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+};
+
+export const decodeShareDataSync = (encoded: string): unknown | null => {
+  // Sync path for legacy b64 payloads only (used during initial render).
+  try {
+    if (encoded.startsWith('lz:')) return null; // needs async decompress
+    const raw = encoded.startsWith('b64:') ? encoded.slice(4) : encoded;
+    const bin = atob(raw);
+    const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+    const json = new TextDecoder().decode(bytes);
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
 };
