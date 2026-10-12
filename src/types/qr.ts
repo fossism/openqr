@@ -145,4 +145,6 @@ export interface BatchItem {
   label: string;
   status?: 'pending' | 'ready' | 'error';
   previewUrl?: string;
+  /** Deterministic ZIP filename (with dedupe suffix), assigned at parse time. */
+  fileName?: string;
 }

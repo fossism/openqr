@@ -2,11 +2,13 @@ import React, { useState, useRef } from 'react';
 import { X, Layers, Download, FileSpreadsheet, RefreshCw, Eye } from 'lucide-react';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
-import QRCodeStyling from 'qr-code-styling';
 import type { QRDesignConfig, BatchItem } from '../types/qr';
-import { createQRCodeOptions, drawFrameOnCanvas } from '../utils/qrGenerator';
+import { renderQRCanvasAtSize } from '../utils/qrGenerator';
 import { triggerConfetti, sanitizeFilename } from '../utils/exportUtils';
 import { useModalBehavior } from '../hooks/useModalBehavior';
+
+const BATCH_CONCURRENCY = 4;
+const BATCH_RENDER_SIZE = 1024;
 
 interface BatchGeneratorProps {
   isOpen: boolean;
@@ -109,6 +111,26 @@ const parseLines = (inputText: string): BatchItem[] => {
   });
 };
 
+/**
+ * Assign deterministic ZIP filenames upfront so the preview list shows exactly
+ * what the archive will contain (dedupe suffixes included).
+ */
+const assignFilenames = (items: BatchItem[]): BatchItem[] => {
+  const counts: Record<string, number> = {};
+  return items.map((item, i) => {
+    const rawLabel = sanitizeFilename(item.label.replace(/[^a-z0-9_-]/gi, '_') || `qr_${i + 1}`, `qr_${i + 1}`);
+    const n = (counts[rawLabel] || 0) + 1;
+    counts[rawLabel] = n;
+    return { ...item, fileName: n > 1 ? `${rawLabel}_${n}.png` : `${rawLabel}.png` };
+  });
+};
+
+const buildManifestCsv = (items: BatchItem[]): string => {
+  const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
+  const rows = items.map((it) => `${esc(it.fileName || '')},${esc(it.label)},${esc(it.content)},${it.content.length}`);
+  return `filename,label,content,chars\n${rows.join('\n')}\n`;
+};
+
 export const BatchGenerator: React.FC<BatchGeneratorProps> = ({
   isOpen,
   onClose,
@@ -137,7 +159,7 @@ https://github.com/fossism/table-3, Table 3`
   if (!isOpen) return null;
 
   const handleParseInput = () => {
-    const items = parseLines(inputText);
+    const items = assignFilenames(parseLines(inputText));
     setBatchItems(items);
     setError(items.length === 0 ? 'Add at least one line.' : null);
   };
@@ -145,7 +167,7 @@ https://github.com/fossism/table-3, Table 3`
   const handleGenerateZip = async () => {
     let itemsToProcess = batchItems;
     if (itemsToProcess.length === 0) {
-      itemsToProcess = parseLines(inputText);
+      itemsToProcess = assignFilenames(parseLines(inputText));
       setBatchItems(itemsToProcess);
     }
 
@@ -164,63 +186,39 @@ https://github.com/fossism/table-3, Table 3`
     const zip = new JSZip();
     const folder = zip.folder('openqr_batch_codes');
 
-    const filenameCountMap: Record<string, number> = {};
+    let completed = 0;
+    const markDone = (id: string, ok: boolean) => {
+      completed += 1;
+      setProgress(Math.round((completed / total) * 100));
+      setBatchItems((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status: ok ? ('ready' as const) : ('error' as const) } : p))
+      );
+    };
 
-    for (let i = 0; i < total; i++) {
-      if (cancelRef.current) break;
-      const item = valid[i];
-      let tempDiv: HTMLDivElement | null = null;
+    const renderOne = async (item: BatchItem) => {
+      if (cancelRef.current) return;
       try {
         const itemConfig = { ...config };
-
         if (itemConfig.frame.style !== 'none') {
           itemConfig.frame = { ...itemConfig.frame, text: item.label };
         }
-
-        const options = createQRCodeOptions(itemConfig, item.content);
-        const qr = new QRCodeStyling(options);
-
-        tempDiv = document.createElement('div');
-        tempDiv.style.position = 'absolute';
-        tempDiv.style.left = '-9999px';
-        document.body.appendChild(tempDiv);
-        qr.append(tempDiv);
-
-        await new Promise((r) => setTimeout(r, 140));
-
-        const rawCanvas = tempDiv.querySelector('canvas');
-        if (rawCanvas) {
-          const finalCanvas = drawFrameOnCanvas(
-            rawCanvas,
-            itemConfig.frame,
-            itemConfig.backgroundColor,
-            itemConfig.transparentBackground
-          );
-          const dataUrl = finalCanvas.toDataURL('image/png');
-          const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
-
-          const rawLabel = sanitizeFilename(item.label.replace(/[^a-z0-9_-]/gi, '_') || `qr_${i + 1}`, `qr_${i + 1}`);
-          const currentCount = (filenameCountMap[rawLabel] || 0) + 1;
-          filenameCountMap[rawLabel] = currentCount;
-          const safeFilename = currentCount > 1 ? `${rawLabel}_${currentCount}.png` : `${rawLabel}.png`;
-
-          folder?.file(safeFilename, base64Data, { base64: true });
-          setBatchItems((prev) =>
-            prev.map((p) => (p.id === item.id ? { ...p, status: 'ready' as const } : p))
-          );
-        }
+        const finalCanvas = await renderQRCanvasAtSize(itemConfig, item.content, BATCH_RENDER_SIZE);
+        if (!finalCanvas) throw new Error('render failed');
+        const dataUrl = finalCanvas.toDataURL('image/png');
+        const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
+        folder?.file(item.fileName || `${sanitizeFilename(item.label, 'qr')}.png`, base64Data, { base64: true });
+        markDone(item.id, true);
       } catch (err) {
         console.error('Batch QR render error:', err);
-        setBatchItems((prev) =>
-          prev.map((p) => (p.id === item.id ? { ...p, status: 'error' as const } : p))
-        );
-      } finally {
-        if (tempDiv && document.body.contains(tempDiv)) {
-          document.body.removeChild(tempDiv);
-        }
+        markDone(item.id, false);
       }
+    };
 
-      setProgress(Math.round(((i + 1) / total) * 100));
+    // Bounded concurrency pool: 4 parallel renders, cancel-aware.
+    for (let i = 0; i < total; i += BATCH_CONCURRENCY) {
+      if (cancelRef.current) break;
+      const chunk = valid.slice(i, i + BATCH_CONCURRENCY);
+      await Promise.all(chunk.map((item) => renderOne(item)));
     }
 
     if (cancelRef.current) {
@@ -229,6 +227,7 @@ https://github.com/fossism/table-3, Table 3`
     }
 
     try {
+      folder?.file('manifest.csv', buildManifestCsv(valid));
       const content = await zip.generateAsync({ type: 'blob' });
       saveAs(content, 'openqr_batch_package.zip');
       triggerConfetti();
@@ -332,13 +331,18 @@ https://github.com/fossism/table-3, Table 3`
         {batchItems.length > 0 && (
           <div className="rounded-none border border-[#241E1B] overflow-hidden">
             <div className="px-4 py-2 bg-[#FFF8F3] text-[11px] text-[#241E1B]/70 font-medium">
-              {batchItems.filter((b) => b.status !== 'error').length} valid / {batchItems.length} total
+              {batchItems.filter((b) => b.status !== 'error').length} valid / {batchItems.length} total · ZIP includes manifest.csv
             </div>
-            <ul className="max-h-40 overflow-y-auto divide-y divide-[#241E1B]/20 text-xs">
-              {batchItems.slice(0, 50).map((item) => (
+            <ul className="max-h-64 overflow-y-auto divide-y divide-[#241E1B]/20 text-xs">
+              {batchItems.map((item) => (
                 <li key={item.id} className="px-4 py-2 flex items-center justify-between gap-3">
-                  <span className="truncate font-mono text-[#241E1B]" title={item.content}>
-                    {item.content || '(empty)'}
+                  <span className="min-w-0">
+                    <span className="block truncate font-mono text-[#241E1B]" title={item.content}>
+                      {item.content || '(empty)'}
+                    </span>
+                    <span className="block truncate font-mono text-[10px] text-[#241E1B]/60" title={item.fileName}>
+                      {item.fileName} · {item.label}
+                    </span>
                   </span>
                   <span className="flex items-center gap-2 shrink-0">
                     <span className="text-[#241E1B]/60 truncate max-w-[120px]">{item.label}</span>
@@ -357,9 +361,6 @@ https://github.com/fossism/table-3, Table 3`
                 </li>
               ))}
             </ul>
-            {batchItems.length > 50 && (
-              <div className="px-4 py-2 text-[11px] text-[#241E1B]/60">Showing first 50 rows.</div>
-            )}
           </div>
         )}
 
@@ -374,7 +375,7 @@ https://github.com/fossism/table-3, Table 3`
             <div className="flex justify-between text-xs text-[#241E1B]">
               <span className="flex items-center gap-1.5">
                 <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#241E1B]" />
-                Generating batch QR canvas images...
+                Rendering 4 at a time at 1024px…
               </span>
               <span className="font-bold text-[#241E1B]">{progress}%</span>
             </div>
