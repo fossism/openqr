@@ -509,10 +509,10 @@ export function App() {
     setConfig((prev) => ({
       ...prev,
       ...theme.config,
-      // Showcase themes carry their own shapes — only fill in dots not specified.
-      dotStyle: theme.config.dotStyle ?? prev.dotStyle,
-      cornerSquareStyle: theme.config.cornerSquareStyle ?? prev.cornerSquareStyle,
-      cornerDotStyle: theme.config.cornerDotStyle ?? prev.cornerDotStyle,
+      // Brand rule: every preset renders sharp square modules end-to-end.
+      dotStyle: 'square',
+      cornerSquareStyle: 'square',
+      cornerDotStyle: 'square',
       gradient: { ...prev.gradient, ...(theme.config.gradient ?? {}) },
     }));
   };
