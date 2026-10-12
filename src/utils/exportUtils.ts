@@ -142,6 +142,40 @@ export const copyCanvasToClipboard = async (canvas: HTMLCanvasElement): Promise<
   }
 };
 
+export const copySvgBlobToClipboard = async (blob: Blob): Promise<boolean> => {
+  try {
+    const text = await blob.text();
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** Physical print size at a given DPI — for the "will it print sharp?" line. */
+export const printSizeCm = (px: number, dpi = 300): string => {
+  const cm = (px / dpi) * 2.54;
+  return cm.toFixed(1);
+};
+
+/**
+ * Highest export resolution safe for this device. 4096px canvases (~64MB
+ * bitmaps with frame compositing) OOM low-memory phones, so cap those at 2048.
+ */
+export const getMaxSafeResolution = (): 2048 | 4096 => {
+  try {
+    const nav = navigator as Navigator & { deviceMemory?: number };
+    if (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4) return 2048;
+    if (/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)) {
+      const cores = typeof navigator.hardwareConcurrency === 'number' ? navigator.hardwareConcurrency : 8;
+      if (cores <= 4) return 2048;
+    }
+  } catch {
+    // fall through to max
+  }
+  return 4096;
+};
+
 export const downloadSvgBlob = (blob: Blob, filename: string) => {
   const safeName = sanitizeFilename(filename, 'openqr-vector');
   saveAs(blob, `${safeName}.svg`);

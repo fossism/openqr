@@ -5,9 +5,12 @@ import {
   exportPdfDocument,
   downloadSvgBlob,
   copyCanvasToClipboard,
+  copySvgBlobToClipboard,
   exportConfigJson,
   parseConfigJson,
   encodeShareDataCompressed,
+  printSizeCm,
+  getMaxSafeResolution,
   triggerConfetti,
 } from '../../utils/exportUtils';
 import { mergeQRConfig } from '../../utils/qrGenerator';
@@ -41,6 +44,8 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
   const [copiedLink, setCopiedLink] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const maxResolution = getMaxSafeResolution();
+  const resolutions = maxResolution >= 4096 ? [512, 1024, 2048, 4096] : [512, 1024, 2048];
 
   const flash = (msg: string) => {
     setNotice(msg);
@@ -74,6 +79,14 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
     exportCanvasImage(fallback, filename || 'openqr-code', 'webp');
   });
 
+  const handleExportJPEG = () => withBusy('jpeg', async () => {
+    const canvas = await getHighResCanvas(resolution);
+    const fallback = canvas ?? getCanvasRef();
+    if (!fallback) return flash('Preview not ready yet.');
+    exportCanvasImage(fallback, filename || 'openqr-code', 'jpeg');
+    if (config.transparentBackground) flash('Note: JPEG has no transparency — background renders white.');
+  });
+
   const handleExportSVG = () => withBusy('svg', async () => {
     const blob = await getSvgBlob();
     if (blob) {
@@ -102,6 +115,15 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
     const ok = await copyCanvasToClipboard(target);
     flash(ok ? 'QR image copied to clipboard.' : 'Clipboard image copy blocked by browser.');
     if (ok) triggerConfetti();
+  });
+
+  const handleCopySvg = () => withBusy('copysvg', async () => {
+    const blob = await getSvgBlob();
+    if (!blob) return flash('Preview not ready yet.');
+    const ok = await copySvgBlobToClipboard(blob);
+    flash(ok ? 'SVG markup copied — paste into Figma / Illustrator.' : 'Clipboard write blocked by browser.');
+    if (ok) triggerConfetti();
+    if (config.frame.style !== 'none') flash('Copied SVG is frameless vector. Use PNG to keep the frame.');
   });
 
   const handleShareLink = async () => {
@@ -162,7 +184,7 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
             <span className="font-mono text-[#241E1B] font-bold">{resolution} px</span>
           </div>
           <div className="grid grid-cols-4 gap-1.5">
-            {[512, 1024, 2048, 4096].map((res) => (
+            {resolutions.map((res) => (
               <button
                 key={res}
                 type="button"
@@ -177,6 +199,13 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
               </button>
             ))}
           </div>
+          <p className="mt-1.5 text-[11px] text-[#241E1B]/60">
+            ≈ {printSizeCm(resolution)} × {printSizeCm(resolution)} cm @ 300dpi
+            {' '}· {printSizeCm(resolution, 150)} cm @ 150dpi for posters.
+            {maxResolution < 4096 && (
+              <> 4k hidden on this device to avoid out-of-memory crashes.</>
+            )}
+          </p>
         </div>
       </div>
 
@@ -199,23 +228,23 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
 
         <button
           type="button"
+          onClick={handleExportJPEG}
+          disabled={!!busy}
+          title="JPEG photo format — no transparency, smallest file"
+          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
+        >
+          {btnBusy('jpeg') ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4 text-[#241E1B]" />}
+          JPEG
+        </button>
+
+        <button
+          type="button"
           onClick={handleExportSVG}
           disabled={!!busy}
           className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
         >
           {btnBusy('svg') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileCode className="w-4 h-4 text-[#241E1B]" />}
           SVG (frameless)
-        </button>
-
-        <button
-          type="button"
-          onClick={handleExportPDF}
-          disabled={!!busy}
-          title="PDF embeds a high-resolution PNG snapshot (not infinite vector). Use SVG for true vector."
-          className="flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
-        >
-          {btnBusy('pdf') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4 text-[#241E1B]" />}
-          PDF (hi-res PNG)
         </button>
 
         <button
@@ -227,9 +256,20 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
           {btnBusy('webp') ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4 text-[#241E1B]" />}
           WEBP
         </button>
+
+        <button
+          type="button"
+          onClick={handleExportPDF}
+          disabled={!!busy}
+          title="PDF embeds a high-resolution PNG snapshot (not infinite vector). Use SVG for true vector."
+          className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] disabled:opacity-60 text-[#241E1B] font-medium text-sm border border-[#241E1B] transition-all"
+        >
+          {btnBusy('pdf') ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4 text-[#241E1B]" />}
+          PDF (hi-res PNG)
+        </button>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <button
           type="button"
           onClick={handleCopyImage}
@@ -238,6 +278,16 @@ export const ExportPanel: React.FC<ExportPanelProps> = ({
         >
           {btnBusy('copy') ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Copy className="w-3.5 h-3.5" />}
           Copy image
+        </button>
+        <button
+          type="button"
+          onClick={handleCopySvg}
+          disabled={!!busy}
+          title="Copy vector markup for Figma / Illustrator"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-none bg-[#FFF8F3] hover:bg-[#16564F] hover:text-[#FFF8F3] border border-[#241E1B]/30 text-xs text-[#241E1B] transition-colors disabled:opacity-60"
+        >
+          {btnBusy('copysvg') ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <FileCode className="w-3.5 h-3.5" />}
+          Copy SVG
         </button>
         <button
           type="button"
