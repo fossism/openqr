@@ -13,10 +13,33 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) =>
     onChange('gradient', { ...config.gradient, [key]: val });
   };
 
-  const contrast = config.transparentBackground
-    ? null
-    : getContrastRatio(config.foregroundColor, config.backgroundColor);
-  const lowContrast = contrast !== null && contrast < 3;
+  const isHex = (s: string) => /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test((s ?? '').trim());
+  const safeContrast = (fg: string, bg: string): number | null => {
+    if (!isHex(fg) || !isHex(bg)) return null;
+    try {
+      return getContrastRatio(fg, bg);
+    } catch {
+      return null;
+    }
+  };
+
+  const bg = config.backgroundColor;
+  const moduleColors =
+    config.gradient.type === 'none' ? [config.foregroundColor] : [config.gradient.color1, config.gradient.color2];
+  const eyeColors = [config.cornerSquareColor, config.cornerDotColor];
+  const allPairs = [...moduleColors.map((c) => ({ label: 'module', color: c })), ...eyeColors.map((c) => ({ label: 'eye', color: c }))];
+
+  const contrasts = config.transparentBackground
+    ? []
+    : allPairs
+        .map((p) => ({ ...p, ratio: safeContrast(p.color, bg) }))
+        .filter((p): p is typeof p & { ratio: number } => p.ratio !== null);
+
+  const minContrast = contrasts.length ? Math.min(...contrasts.map((c) => c.ratio)) : null;
+  const worst = contrasts.length ? contrasts.reduce((a, b) => (a.ratio <= b.ratio ? a : b)) : null;
+  // WCAG AA for graphics: 3:1 minimum, 4.5:1 preferred for reliable scanning.
+  const fail = minContrast !== null && minContrast < 3;
+  const warn = minContrast !== null && minContrast >= 3 && minContrast < 4.5;
 
   return (
     <div className="space-y-5">
@@ -212,26 +235,34 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ config, onChange }) =>
         </div>
       </div>
 
-      {contrast !== null && (
+      {minContrast !== null && worst !== null ? (
         <div
           className={`p-3 rounded-none border flex items-start gap-2.5 text-xs ${
-            lowContrast
+            fail || warn
               ? 'bg-[#241E1B]/5 border-[#241E1B] text-[#241E1B]'
               : 'bg-[#16564F] border-[#241E1B] text-[#FFF8F3]'
           }`}
         >
-          {!lowContrast ? (
-            <Eye className="w-4 h-4 shrink-0 mt-0.5" />
-          ) : (
+          {fail || warn ? (
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+          ) : (
+            <Eye className="w-4 h-4 shrink-0 mt-0.5" />
           )}
           <p>
-            Contrast {contrast.toFixed(2)}:1 {' '}
-            {lowContrast
-              ? 'below 3:1. Scanners may fail. Darken modules or lighten background.'
-              : 'good for scanning.'}
+            Contrast {minContrast.toFixed(2)}:1 (weakest: {worst.label} {worst.color} on {bg}){' '}
+            {fail
+              ? '— below 3:1. Scanners will likely fail. Darken modules/eyes or lighten background.'
+              : warn
+                ? '— below the 4.5:1 preferred threshold. Works in good light, but darken modules for print.'
+                : '— good for scanning (≥ 4.5:1 on all pairs).'}
           </p>
         </div>
+      ) : (
+        config.transparentBackground && (
+          <p className="p-3 rounded-none border border-[#241E1B]/30 text-xs text-[#241E1B]/70">
+            Transparent background: contrast check skipped. Test on both light and dark surfaces.
+          </p>
+        )
       )}
     </div>
   );
