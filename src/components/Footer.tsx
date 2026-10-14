@@ -47,7 +47,7 @@ export const Footer: React.FC<FooterProps> = ({
         <div className="space-y-3">
           <p className="text-sm font-bold tracking-tight">OpenQR</p>
           <p className="text-xs text-[#FFF8F3]/70 leading-relaxed">
-            Nothing you type leaves your device. Codes generate locally — no uploads, no cookies, no
+            Nothing you type leaves your device. Codes generate locally, no uploads, no cookies, no
             analytics.
           </p>
           <p className="flex items-center gap-2 text-xs" role="status">
