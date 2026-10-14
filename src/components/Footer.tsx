@@ -14,7 +14,7 @@ const APP_VERSION = 'v0.1.0';
 const REPO_URL = 'https://github.com/fossism/openqr';
 
 const linkCls =
-  'inline-flex items-center min-h-[44px] px-1 py-2 text-xs text-[#FFF8F3]/80 hover:text-[#E8B84B] underline-offset-4 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B84B]';
+  'inline-flex items-center min-h-[36px] px-1 py-1 text-xs text-[#FFF8F3]/80 hover:text-[#E8B84B] underline-offset-4 hover:underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B84B]';
 
 export const Footer: React.FC<FooterProps> = ({
   onSelectContentType,
