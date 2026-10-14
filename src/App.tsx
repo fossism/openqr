@@ -49,6 +49,7 @@ import { decodeShareDataSync, decodeShareData } from './utils/exportUtils';
 import { loadStoredLogo, saveStoredLogo, clearStoredLogo } from './utils/logoStorage';
 
 import { Header } from './components/Header';
+import { Footer } from './components/Footer';
 import { QRPreview } from './components/QRPreview';
 import type { QRPreviewHandle } from './components/QRPreview';
 import { StylePicker } from './components/customization/StylePicker';
@@ -609,6 +610,14 @@ export function App() {
     });
   };
 
+  const handleSelectContentType = (type: ContentType) => {
+    setActiveContentType(type);
+    setActiveCustomTab('content');
+    requestAnimationFrame(() => {
+      document.getElementById('customize')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const contentTypes: { id: ContentType; label: string; icon: ReactNode }[] = [
     { id: 'url', label: 'Website URL', icon: <Globe className="w-4 h-4" /> },
     { id: 'wifi', label: 'Wi-Fi Network', icon: <Wifi className="w-4 h-4" /> },
@@ -888,16 +897,13 @@ export function App() {
       />
 
       {/* Footer */}
-      <footer className="mt-auto border-t-4 border-[#E8B84B] py-6 bg-[#241E1B] text-center text-xs text-[#FFF8F3]">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p>© {new Date().getFullYear()} OpenQR: Privacy-First Open Source QR Code Generator</p>
-          <div className="flex items-center gap-4">
-            <span className="text-[#E8B84B] font-bold">● 100% Client-Side Engine</span>
-            <span>No Login Required</span>
-            <span>Offline Capable</span>
-          </div>
-        </div>
-      </footer>
+      <Footer
+        onSelectContentType={handleSelectContentType}
+        onOpenPresets={() => setShowPresetsModal(true)}
+        onOpenScan={() => setShowScanModal(true)}
+        onOpenBatch={() => setShowBatchModal(true)}
+        onResetDesign={handleResetDesign}
+      />
     </div>
   );
 }
