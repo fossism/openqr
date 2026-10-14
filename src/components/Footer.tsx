@@ -150,7 +150,7 @@ export const Footer: React.FC<FooterProps> = ({
               target="_blank"
               rel="noreferrer"
               title="OpenQR source code is MIT licensed — free for personal and commercial use"
-              className="inline-flex items-center min-h-[44px] text-[11px] font-bold text-[#E8B84B] underline-offset-4 hover:underline hover:text-[#FFF8F3] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B84B]"
+              className="inline-flex items-center min-h-[44px] text-[11px] font-bold text-[#FFF8F3] underline-offset-4 hover:underline hover:text-[#E8B84B] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E8B84B]"
             >
               MIT License
             </a>
