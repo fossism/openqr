@@ -15,7 +15,6 @@ import {
   Image as ImageIcon,
   Frame as FrameIcon,
   RotateCcw,
-  Sparkles,
   History,
   Trash2,
 } from 'lucide-react';
@@ -783,7 +782,7 @@ export function App() {
           {/* Quick Aesthetic Preset Bar */}
           <div className="p-4 rounded-none bg-[#241E1B]/5 border border-[#241E1B]/30 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#241E1B]" />
+              <span className="w-2.5 h-2.5 bg-[#08B74F] inline-block" aria-hidden="true" />
               <span className="text-xs text-[#241E1B] font-medium">Looking for quick inspiration?</span>
             </div>
             <button
